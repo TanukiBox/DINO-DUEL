@@ -1,7 +1,10 @@
 /*
  * DINO DUEL 起動と画面の切りかえ
  * 共通土台（セーブ・日英切替・片手操作・効果音）をここで用意して DN.app にまとめる。
- * 段階1：タイトル → バトル1戦 → 結果（もう一戦／タイトルへ）
+ * 画面：タイトル → ホーム（大会・カードパック・チーム・図鑑） → 大会 → バトル → 試合の結果
+ *
+ * デバッグモード（プレイ動画の撮影用）：URL の最後に ?debug=1
+ *   全カード解放・賞金最大・大会を自由に選べる。ふつうのセーブとは別の場所に保存する（ふつうのセーブは変わらない）。
  */
 (function (global) {
   'use strict';
@@ -9,75 +12,77 @@
 
   function $(id) { return document.getElementById(id); }
 
-  var store = TB.createStore('dino-duel');
+  var debug = /[?&]debug=1(&|$)/.test(global.location.search);
+  var store = TB.createStore(debug ? 'dino-duel-debug' : 'dino-duel');
   var i18n = TB.createI18n(DN.TEXT, 'en');
-  var sound = TB.createSound(store);
+  var sound = TB.createSound(TB.createStore('dino-duel'));   // 音のオンオフは共通
   var sfx = DN.createSfx(sound);
   document.documentElement.lang = i18n.lang;
   document.title = 'DINO DUEL' + (i18n.lang === 'ja' ? '／恐竜カードバトル' : ' — Dino Card Battle');
 
-  // セーブ（段階1は対戦成績と相手の強さだけ。段階2で持ち物・重ね数・レベル・賞金・大会の進み具合を足す）
-  var SAVE_VER = 1;
-  var save = store.get('save', null);
-  if (!save || save.v !== SAVE_VER) save = { v: SAVE_VER, wins: 0, losses: 0, level: 0 };
-  function commit() { store.set('save', save); }
+  // ---- セーブ（持っている恐竜・重ね数・レベル・賞金・大会の進み具合）----
+  var state = DN.Progress.fix(store.get('progress', null));
+  if (debug) {
+    DN.DINOS.forEach(function (d) { if (!state.owned[d.id]) state.owned[d.id] = { stack: 0, lv: 1, xp: 0 }; });
+    state.money = 9999999;
+    state.debug = true;
+  }
+  function save() { store.set('progress', state); }
+  save();
 
-  var TEAM = ['tyranno', 'triceratops', 'pterano'];
-
-  DN.app = { store: store, i18n: i18n, sound: sound, sfx: sfx, save: save };
+  var app = DN.app = {
+    store: store, i18n: i18n, sound: sound, sfx: sfx, debug: debug,
+    get state() { return state; },
+    save: save,
+    returnTo: 'home'
+  };
 
   function show(id) {
-    document.querySelectorAll('.screen').forEach(function (s) { s.classList.toggle('active', s.id === id); });
+    document.querySelectorAll('.screen').forEach(function (s) { s.classList.toggle('active', s.id === 'scr-' + id); });
   }
 
-  function applyText(root) {
-    root.querySelectorAll('[data-t]').forEach(function (e) { e.textContent = i18n.t(e.dataset.t); });
-  }
+  /** 画面を切りかえる（name = title / home / tour / team / dex / shop） */
+  app.go = function (name, args) {
+    if (DN.closeOverlay) DN.closeOverlay();
+    DN.BattleView.stop();
+    if (name === 'title') { buildTitle(); show('title'); return; }
+    if (name !== 'team') app.returnTo = name;
+    DN.Screens[name](args);
+    show(name);
+  };
+  app.showTitle = function () { app.go('title'); };
+
+  /** 大会の今の試合を始める */
+  app.startMatch = function () {
+    var s = state, run = s.run, TT = DN.TOURNAMENTS[run.t];
+    var before = {};
+    s.team.forEach(function (id) { before[id] = { lv: s.owned[id].lv, xp: s.owned[id].xp }; });
+    var t = run.t, matchNo = run.m + 1;
+    show('battle');
+    DN.BattleView.start({
+      team: DN.Progress.teamSpecs(s),
+      foes: DN.Progress.opponent(s),
+      level: TT.ai,
+      label: i18n.t('matchLabel', { name: i18n.t('lv_' + TT.key), n: matchNo, m: TT.matches.length }),
+      onEnd: function (won, turns) {
+        var r = DN.Progress.finishMatch(s, won);
+        save();
+        DN.Screens.result(r, before, t, turns);
+        show('result');
+      }
+    });
+  };
 
   // ---- タイトル ----
   function buildTitle() {
-    applyText($('title'));
-    $('t-dinos').innerHTML = TEAM.map(function (id) { return '<div>' + DN.art.img(DN.dino(id)) + '</div>'; }).join('');
-    var row = $('lv-row');
-    row.innerHTML = '';
-    DN.CFG.AI_LEVELS.forEach(function (lv, i) {
-      var b = document.createElement('button');
-      b.textContent = i18n.t('lv_' + lv.key);
-      b.className = i === save.level ? 'on' : '';
-      b.addEventListener('click', function () {
-        save.level = i; commit(); sfx.tap();
-        row.querySelectorAll('button').forEach(function (x, k) { x.className = k === i ? 'on' : ''; });
-      });
-      row.appendChild(b);
-    });
-    updateSoundBtn();
+    var t = $('scr-title');
+    t.querySelectorAll('[data-t]').forEach(function (e) { e.textContent = i18n.t(e.dataset.t); });
+    $('t-dinos').innerHTML = state.team.map(function (id) { return '<div>' + DN.art.img(DN.dino(id)) + '</div>'; }).join('');
+    $('btn-sound').textContent = i18n.t(sound.muted ? 'soundOff' : 'soundOn');
+    $('t-debug').style.display = debug ? '' : 'none';
   }
-  function updateSoundBtn() { $('btn-sound').textContent = i18n.t(sound.muted ? 'soundOff' : 'soundOn'); }
-
-  DN.app.showTitle = function () {
-    DN.BattleView.stop();
-    show('title');
-    updateSoundBtn();
-  };
-
-  // ---- バトル ----
-  function pickFoes() {
-    var pool = DN.DINOS.map(function (d) { return d.id; }).filter(function (id) { return TEAM.indexOf(id) < 0; });
-    var out = [];
-    while (out.length < 3) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-    return out;
-  }
-  function startBattle() {
-    show('battle');
-    DN.BattleView.start({
-      team: TEAM, foes: pickFoes(), level: save.level,
-      onEnd: function (won) { if (won) save.wins++; else save.losses++; commit(); },
-      onAgain: startBattle
-    });
-  }
-
-  $('btn-start').addEventListener('click', function () { sfx.go(); startBattle(); });
-  $('btn-sound').addEventListener('click', function () { sound.toggle(); sfx.tap(); updateSoundBtn(); });
+  $('btn-start').addEventListener('click', function () { sfx.go(); app.go('home'); });
+  $('btn-sound').addEventListener('click', function () { sound.toggle(); sfx.tap(); $('btn-sound').textContent = i18n.t(sound.muted ? 'soundOff' : 'soundOn'); });
 
   // タイミングのタップ：画面のどこを押しても（PC はクリック・スペースキーでも）
   var input = TB.createInput($('tapzone'));

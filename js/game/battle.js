@@ -14,32 +14,44 @@
 
   var B = DN.Battle = {};
 
+  /** 成長の倍率（レベルと重ね強化） */
+  B.growth = function (lv, stack) { return 1 + CFG.LV_PCT * ((lv || 1) - 1) + CFG.STACK_PCT * (stack || 0); };
+
   /**
-   * 1体ぶんの戦う恐竜を作る。
-   * opts.statMul：全体の倍率（相手の強さ） / opts.bonus：{ hp, atk, def, spd }（レベル・重ね強化の上乗せ。段階2）
+   * 1体ぶんの戦う恐竜を作る。spec = 恐竜の id、または { id, lv, stack }
+   * opts.statMul：全体の倍率 / opts.combos：発動しているコンボ（DN.COMBOS の要素）の並び
    */
-  B.makeUnit = function (id, side, lane, opts) {
+  B.makeUnit = function (spec, side, lane, opts) {
     opts = opts || {};
-    var d = DN.dino(id), mul = opts.statMul || 1, bo = opts.bonus || {};
-    var hp = Math.round((d.hp + (bo.hp || 0)) * mul);
+    if (typeof spec === 'string') spec = { id: spec };
+    var d = DN.dino(spec.id), g = B.growth(spec.lv, spec.stack) * (opts.statMul || 1);
+    var up = { hp: 1, atk: 1, def: 1, spd: 1 };
+    (opts.combos || []).forEach(function (c) { Object.keys(c.up).forEach(function (k) { up[k] += c.up[k]; }); });
+    var hp = Math.round(d.hp * g * up.hp);
     return {
-      uid: side * 3 + lane, id: id, d: d, side: side, lane: lane,
+      uid: side * 3 + lane, id: spec.id, d: d, side: side, lane: lane,
+      lv: spec.lv || 1, stack: spec.stack || 0,
       maxHp: hp, hp: hp,
-      atk: (d.atk + (bo.atk || 0)) * mul,
-      def: (d.def + (bo.def || 0)) * mul,
-      spd: (d.spd + (bo.spd || 0)) * mul,
+      atk: d.atk * g * up.atk,
+      def: d.def * g * up.def,
+      spd: d.spd * g * up.spd,
       dex: Math.max(CFG.DEX_MIN, Math.min(CFG.DEX_MAX, d.dex)),
       st: { atkUp: 0, defDown: 0, spdDown: 0 },
       alive: true
     };
   };
 
+  /** teamA / teamB = 3体（id か { id, lv, stack }）。コンボは自動で調べて入れる */
   B.create = function (teamA, teamB, opts) {
     opts = opts || {};
-    var units = [];
-    teamA.forEach(function (id, i) { units.push(B.makeUnit(id, 0, i, opts.a)); });
-    teamB.forEach(function (id, i) { units.push(B.makeUnit(id, 1, i, opts.b)); });
-    return { units: units, turn: 0, rand: opts.rand || Math.random };
+    var units = [], combos = [[], []];
+    [teamA, teamB].forEach(function (team, side) {
+      var ids = team.map(function (s) { return typeof s === 'string' ? s : s.id; });
+      combos[side] = DN.combosFor ? DN.combosFor(ids) : [];
+      var o = Object.assign({}, side ? opts.b : opts.a, { combos: combos[side] });
+      team.forEach(function (s, i) { units.push(B.makeUnit(s, side, i, o)); });
+    });
+    return { units: units, turn: 0, rand: opts.rand || Math.random, combos: combos };
   };
 
   B.side = function (st, side) { return st.units.filter(function (u) { return u.side === side && u.alive; }); };

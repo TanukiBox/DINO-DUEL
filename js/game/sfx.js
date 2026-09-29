@@ -125,7 +125,14 @@
         notes([[523, 0], [784, 0.06], [1047, 0.12, 0.25]], { vol: 0.1 });
         S.noise({ dur: 0.4, vol: 0.1, f0: 500, f1: 3000, q: 1.5 });
       },
-      /** カードが出てくる（段階2で使う） */
+      /** コインを入れる */
+      coin: function () { S.tone({ type: 'square', f0: 1400, f1: 1400, dur: 0.05, vol: 0.08 }); S.tone({ type: 'square', f0: 2100, f1: 2100, dur: 0.12, vol: 0.08, delay: 0.06 }); },
+      /** 筐体が動く（rank = レア度 0〜4 で高く長く） */
+      whirr: function (rank) {
+        S.synth({ f: 120 + rank * 30, f1: 300 + rank * 140, dur: 0.8 + rank * 0.25, vol: 0.08, glide: 0.8 + rank * 0.25, osc: [{ type: 'sawtooth', detune: -10 }, { type: 'square', detune: 8, gain: 0.5 }], filter: { f: 600, f1: 2400, q: 3 } });
+        for (var i = 0; i < 4 + rank * 2; i++) S.tone({ type: 'triangle', f0: 900 + i * 80, f1: 900 + i * 80, dur: 0.05, vol: 0.05, delay: i * 0.12 });
+      },
+      /** カードが出てくる */
       card: function (rank) {
         S.noise({ dur: 0.5, vol: 0.1, f0: 800, f1: 3000, q: 1 });
         notes([[784, 0.3], [1047, 0.4], [1319, 0.5, rank > 2 ? 0.5 : 0.2]], { vol: 0.08 });

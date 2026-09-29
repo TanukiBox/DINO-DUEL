@@ -27,7 +27,7 @@
 <div id="app">
 
   <!-- タイトル -->
-  <section id="title" class="screen">
+  <section id="scr-title" class="screen">
     <div class="t-top sky">
       <h1 class="logo">DINO<br>DUEL</h1>
       <p class="t-sub" data-t="subtitle"></p>
@@ -38,9 +38,9 @@
         <li data-t="howto1"></li>
         <li data-t="howto2"></li>
         <li data-t="howto3"></li>
+        <li data-t="howto4"></li>
       </ol>
-      <div class="lv-label" data-t="foeLevel"></div>
-      <div class="lv-row" id="lv-row"></div>
+      <span class="dbg" id="t-debug">DEBUG MODE</span>
       <button class="btn big" id="btn-start" data-t="start"></button>
       <div class="t-foot">
         <button class="btn small" id="btn-sound"></button>
@@ -49,8 +49,16 @@
     </div>
   </section>
 
+  <!-- ホーム・大会・結果・チーム・図鑑・カードパック（中身は js/game/screens.js・shop.js が作る） -->
+  <section id="scr-home" class="screen"></section>
+  <section id="scr-tour" class="screen"></section>
+  <section id="scr-result" class="screen"></section>
+  <section id="scr-team" class="screen"></section>
+  <section id="scr-dex" class="screen"></section>
+  <section id="scr-shop" class="screen"></section>
+
   <!-- バトル -->
-  <section id="battle" class="screen">
+  <section id="scr-battle" class="screen">
     <div class="field sky" id="field">
       <div class="turn-badge" id="turn-badge"></div>
       <div class="lanes" id="lanes"></div>
@@ -59,6 +67,9 @@
     <div class="order" id="order"></div>
     <div class="panel" id="panel"></div>
   </section>
+
+  <!-- 上にかぶせる画面（排出率・カードをめくる・確認） -->
+  <div id="overlay"></div>
 
   <!-- タイミングのタップを受けるための透明な板（攻撃・防御の輪が出ている間だけ） -->
   <div id="tapzone"></div>
@@ -86,10 +97,14 @@
 <script src="js/game/art-pterano.js?v=8"></script>
 <script src="js/game/art-elasmo.js?v=8"></script>
 <script src="js/game/battle.js?v=8"></script>
+<script src="js/game/progress.js?v=8"></script>
 <script src="js/game/sfx.js?v=8"></script>
 <script src="js/game/share.js?v=8"></script>
 <script src="js/game/anims.js?v=8"></script>
 <script src="js/game/battle-view.js?v=8"></script>
+<script src="js/game/card.js?v=8"></script>
+<script src="js/game/screens.js?v=8"></script>
+<script src="js/game/shop.js?v=8"></script>
 <script src="js/game/main.js?v=8"></script>
 </body>
 </html>

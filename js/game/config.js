@@ -12,7 +12,7 @@
 
     // ---- ダメージ ----
     // ダメージ = 威力 × (攻撃力 ÷ 相手の防御力) × DMG_K × 乱数 × クリティカル × タイミング倍率
-    DMG_K: 0.72,
+    DMG_K: 0.86,
     RAND_MIN: 0.9,
     RAND_MAX: 1.1,
     CRIT_MUL: 1.5,
@@ -37,15 +37,28 @@
       recoil: 0.25            // 反動：与えたダメージの25%
     },
 
+    // ---- 成長 ----
+    // 能力の上乗せ = 元の能力 ×（LV_PCT ×（レベル−1）＋ STACK_PCT × 重ねた枚数）。体力・攻撃・防御・素早さに効く
+    LV_MAX: 10,
+    LV_PCT: 0.04,             // レベル1つごとに +4%（レベル10で +36%）
+    STACK_PCT: 0.05,          // 1枚重ねるごとに +5%（上限なし）
+    XP_NEXT: 60,              // 次のレベルまでの経験値 = XP_NEXT × 今のレベル（1→2 は 60、9→10 は 540）
+    XP_WIN: [40, 55, 70, 90, 110],  // 勝ったとき（大会ごと）
+    XP_LOSE: 15,              // 負けたとき
+
+    // ---- お金とパック ----
+    START_MONEY: 240,         // はじめの賞金（パック2回ぶん）
+    STARTERS: ['raptor', 'stego', 'rhampho'],  // はじめから持っている3体（肉食・草食・空と海から1体ずつ）
+
     // ---- 相手AIのうまさ（大会ごと）----
     // atk / def：AI がタイミングを「ぴったり」「おしい」にする確率。残りは「外れ」
-    // statMul：相手の強さ（ステータスの倍率。段階2で大会の敵チームに置きかえる）
+    // statMul：相手の強さの倍率（大会の相手はレベルと重ね強化で強くするので 1 のまま）
     AI_LEVELS: [
-      { key: 'beginner', atk: { perfect: 0.05, good: 0.20 }, def: { perfect: 0.03, good: 0.15 }, statMul: 0.85 },
-      { key: 'novice',   atk: { perfect: 0.12, good: 0.30 }, def: { perfect: 0.08, good: 0.25 }, statMul: 0.95 },
-      { key: 'advance',  atk: { perfect: 0.22, good: 0.38 }, def: { perfect: 0.15, good: 0.32 }, statMul: 1.05 },
-      { key: 'master',   atk: { perfect: 0.38, good: 0.40 }, def: { perfect: 0.28, good: 0.40 }, statMul: 1.35 },
-      { key: 'legend',   atk: { perfect: 0.55, good: 0.35 }, def: { perfect: 0.45, good: 0.38 }, statMul: 1.7 }
+      { key: 'beginner', atk: { perfect: 0.05, good: 0.20 }, def: { perfect: 0.03, good: 0.15 }, statMul: 1 },
+      { key: 'novice',   atk: { perfect: 0.12, good: 0.30 }, def: { perfect: 0.08, good: 0.25 }, statMul: 1 },
+      { key: 'advance',  atk: { perfect: 0.22, good: 0.38 }, def: { perfect: 0.15, good: 0.32 }, statMul: 1 },
+      { key: 'master',   atk: { perfect: 0.38, good: 0.40 }, def: { perfect: 0.22, good: 0.38 }, statMul: 1 },
+      { key: 'legend',   atk: { perfect: 0.55, good: 0.35 }, def: { perfect: 0.32, good: 0.38 }, statMul: 1 }
     ],
 
     // ---- 演出の速さ（秒）----

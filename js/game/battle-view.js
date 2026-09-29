@@ -41,7 +41,7 @@
         s.className = 'slot ' + (side === 0 ? 'me' : 'foe');
         s.style.setProperty('--rc', RC[u.d.rarity]);
         s.innerHTML =
-          '<div class="hud"><span class="nm">' + esc(L(u.d.name)) + '</span>' +
+          '<div class="hud"><span class="lvb">Lv' + u.lv + (u.stack ? '+' + u.stack : '') + '</span><span class="nm">' + esc(L(u.d.name)) + '</span>' +
           '<span class="hpbar"><i></i></span><span class="hpn"></span><span class="buffs"></span></div>' +
           '<div class="sprite"><div class="body" style="animation-delay:-' + (Math.random() * 1.8).toFixed(2) + 's">' + DN.art.img(u.d) + '</div></div>';
         row.appendChild(s);
@@ -163,7 +163,13 @@
     p.querySelectorAll('.mv').forEach(function (b) {
       b.addEventListener('click', function (e) { pick(+b.dataset.uid, +b.dataset.i, b, e); });
     });
-    $('b-quit').addEventListener('click', function () { DN.app.sfx.tap(); V.stop(); DN.app.showTitle(); });
+    $('b-quit').addEventListener('click', function () {
+      DN.app.sfx.tap();
+      DN.overlay('<div class="confirm"><p>' + T('quitConfirm') + '</p></div>', [
+        { label: T('quitYes'), fn: function () { DN.closeOverlay(); V.stop(); if (opts.onEnd) opts.onEnd(false, st.turn, { quit: true }); } },
+        { label: T('quitNo'), big: true, fn: DN.closeOverlay }
+      ]);
+    });
     $('b-snd').addEventListener('click', function () { DN.app.sound.toggle(); DN.app.sfx.tap(); $('b-snd').textContent = soundLabel(); });
     updatePickHint();
   }
@@ -219,7 +225,7 @@
     st.ties = {};
     st.units.forEach(function (u) { st.ties[u.uid] = Math.random(); });
     acting = false;
-    $('turn-badge').textContent = T('turn', { n: st.turn }) + ' ・ ' + T('lv_' + lv.key);
+    $('turn-badge').textContent = T('turn', { n: st.turn }) + ' ・ ' + (opts.label || T('lv_' + lv.key));
     splash(T('turn', { n: st.turn }));
     DN.app.sfx.turn();
     renderCommand();
@@ -525,20 +531,32 @@
     $('tapzone').classList.remove('on');
     if (won) DN.app.sfx.victory(); else DN.app.sfx.defeat();
     splash(T(won ? 'win' : 'lose'));
-    var turns = st.turn;
-    var p = $('panel');
-    p.innerHTML = '<div class="result ' + (won ? 'win' : 'lose') + '">' +
-      '<h2>' + T(won ? 'win' : 'lose') + '</h2>' +
-      '<p>' + (won ? T('winSub', { n: turns }) : T('loseSub')) + '</p>' +
-      '<div class="btns"><button class="btn big" id="b-again">' + T('again') + '</button>' +
-      '<div class="row2">' + (won ? '<button class="btn x" id="b-share">' + T('share') + '</button>' : '') +
-      '<button class="btn" id="b-title">' + T('toTitle') + '</button></div></div></div>';
-    $('b-again').addEventListener('click', function () { DN.app.sfx.go(); opts.onAgain && opts.onAgain(); });
-    $('b-title').addEventListener('click', function () { DN.app.sfx.tap(); DN.app.showTitle(); });
-    if (won) $('b-share').addEventListener('click', function () {
-      DN.shareOnX(T('shareWin', { lv: T('lv_' + lv.key), n: turns }) + '\n' + T('shareTags'));
-    });
-    if (opts.onEnd) opts.onEnd(won, turns);
+    var turns = st.turn, id = runId;
+    $('panel').innerHTML = '<div class="result ' + (won ? 'win' : 'lose') + '"><h2>' + T(won ? 'win' : 'lose') + '</h2>' +
+      '<p>' + (won ? T('winSub', { n: turns }) : T('loseSub')) + '</p></div>';
+    setTimeout(function () { if (id === runId && opts.onEnd) opts.onEnd(won, turns, {}); }, 1800);
+  }
+
+  /** コンボ発動の演出（バトルのはじめ） */
+  async function showCombos(id) {
+    for (var side = 0; side < 2; side++) {
+      var list = st.combos[side] || [];
+      for (var k = 0; k < list.length; k++) {
+        if (id !== runId) return;
+        var c = list[k];
+        var ups = Object.keys(c.up).map(function (key) { return T('st_' + key) + '+' + Math.round(c.up[key] * 100) + '%'; }).join(' ');
+        fx('combo-banner' + (side ? ' foe' : ''), '<small>' + T('comboOn') + '</small><b>' + esc(L(c.name)) + '</b><span>' + ups + '</span>', null);
+        st.units.forEach(function (u) {
+          if (u.side !== side) return;
+          var sl = slots[u.uid];
+          sl.body.animate([{ filter: 'drop-shadow(0 0 0 #ffd23a)' }, { filter: 'drop-shadow(0 0 12px #ffd23a) brightness(1.4)' }, { filter: 'drop-shadow(0 0 0 #ffd23a)' }], { duration: 900 });
+          sl.sprite.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-10px)' }, { transform: 'translateY(0)' }], { duration: 400, easing: 'ease-out' });
+        });
+        DN.app.sfx.buff(true);
+        DN.app.sfx.charge(3);
+        await wait(1300);
+      }
+    }
   }
 
   // ---------------- 外から使う ----------------
@@ -550,7 +568,11 @@
     pendingTap = null;
     chain = 0;
     buildField();
-    newTurn();
+    acting = true;
+    $('panel').innerHTML = '';
+    $('turn-badge').textContent = o.label || '';
+    var id = runId;
+    showCombos(id).then(function () { if (id === runId) newTurn(); });
   };
   V.stop = function () {
     runId++;
