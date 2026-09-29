@@ -77,18 +77,51 @@
     this.defs += '<clipPath id="' + cid + '"><path d="' + d + '"/></clipPath>';
     this.out += '<path d="' + d + '" fill="' + f + '"/>';
     this.out += '<g clip-path="url(#' + cid + ')">';
-    if (o.belly) this.out += '<path d="' + o.belly + '" fill="' + this.col.belly + '"/>';
+    if (o.belly) this.out += '<path d="' + o.belly + '" fill="' + (o.bellyFill || this.col.belly) + '"/>';
     if (o.pattern !== false) this.out += this.pattern;
-    this.out += '<rect x="0" y="0" width="200" height="150" fill="url(#' + this.id + 'g)"/>';
+    if (o.inner) this.out += o.inner;
+    if (o.tex) {
+      var tid = this.tex();
+      this.out += '<rect x="-20" y="-20" width="240" height="190" fill="url(#' + tid + 'b)"/><rect x="-20" y="-20" width="240" height="190" fill="url(#' + tid + ')"/>';
+    }
+    if (o.shade !== false) this.out += '<rect x="-20" y="-20" width="240" height="190" fill="url(#' + this.id + 'g)"/>';
+    if (o.after) this.out += o.after;
     this.out += '</g>';
     this.out += '<path d="' + d + '" fill="none" stroke="' + OL + '" stroke-width="' + (o.lw || LW) + '" stroke-linejoin="round" stroke-linecap="round"/>';
   };
 
+  /** うろこの模様（くり返しの柄）。id を返す */
+  Pen.prototype.tex = function () {
+    var tid = this.id + 'sc';
+    if (!this.hasTex) {
+      this.hasTex = true;
+      // 小石を敷きつめたようなうろこ（段ごとに半分ずらす）＋ まだらのしみ
+      this.defs += '<pattern id="' + tid + '" width="4.4" height="3.8" patternUnits="userSpaceOnUse" patternTransform="rotate(-14)">' +
+        '<ellipse cx="1.1" cy="0.95" rx="1.05" ry="0.85" fill="#fff" fill-opacity="0.07" stroke="#1a0f08" stroke-opacity="0.16" stroke-width="0.35"/>' +
+        '<ellipse cx="3.3" cy="2.85" rx="1.05" ry="0.85" fill="#fff" fill-opacity="0.07" stroke="#1a0f08" stroke-opacity="0.16" stroke-width="0.35"/></pattern>';
+      var r = this.rnd, blot = '';
+      for (var i = 0; i < 26; i++) {
+        blot += '<ellipse cx="' + (r() * 60).toFixed(1) + '" cy="' + (r() * 50).toFixed(1) + '" rx="' + (1.5 + r() * 4).toFixed(1) + '" ry="' + (1 + r() * 2.4).toFixed(1) + '" fill="#1a0f08" fill-opacity="' + (0.05 + r() * 0.08).toFixed(2) + '"/>';
+      }
+      this.defs += '<pattern id="' + tid + 'b" width="60" height="50" patternUnits="userSpaceOnUse">' + blot + '</pattern>';
+    }
+    return tid;
+  };
+
+  /** 動かせる部品のまとまり（技のアニメーションで回したり動かしたりする）。ox, oy = 回転の中心 */
+  Pen.prototype.open = function (cls, ox, oy) {
+    this.out += '<g class="' + cls + '" style="transform-origin:' + ox + 'px ' + oy + 'px">';
+  };
+  Pen.prototype.close = function () { this.out += '</g>'; };
+
   /** 線だけ（しわ・口・指など） */
   Pen.prototype.line = function (d, w, color) {
+    if (this.sil) return;
     this.out += '<path d="' + d + '" fill="none" stroke="' + (color || OL) + '" stroke-width="' + (w || 2.4) + '" stroke-linecap="round" stroke-linejoin="round"/>';
   };
   Pen.prototype.raw = function (s) { this.out += s; };
+  /** 細部（シルエットのときは描かない） */
+  Pen.prototype.detail = function (s) { if (!this.sil) this.out += s; };
 
   Pen.prototype.eye = function (x, y, r, fierce) {
     if (this.sil) return;
@@ -148,7 +181,7 @@
     var size = this.a.size || 1;
     var vb = '0 0 200 150';
     if (crop) {
-      var b = HEAD_BOX[this.a.type] || [100, 20, 100];
+      var b = this.headBox || HEAD_BOX[this.a.type] || [100, 20, 100];
       var x = 100 + (b[0] - 100) * size, y = 146 + (b[1] - 146) * size, w = b[2] * size;
       vb = x.toFixed(1) + ' ' + y.toFixed(1) + ' ' + w.toFixed(1) + ' ' + w.toFixed(1);
     }
@@ -421,12 +454,22 @@
     }
   };
 
+  // ================= 1体ずつ描きこんだ恐竜 =================
+  var CUSTOM = DN.ART_CUSTOM = DN.ART_CUSTOM || {};
+
   DN.art = {
     types: Object.keys(TYPES),
     shade: shade,
+    /** 頭のあたりの位置（絵の幅・高さに対する割合、右向き） */
+    headPoint: function (dino) {
+      var b = (CUSTOM[dino.id] && CUSTOM[dino.id].box) || HEAD_BOX[dino.art.type] || [100, 20, 100];
+      var size = dino.art.size || 1;
+      var cx = 100 + (b[0] + b[2] / 2 - 100) * size, cy = 146 + (b[1] + b[2] / 2 - 146) * size;
+      return [cx / 200, cy / 150];
+    },
     svg: function (dino, opt) {
       var p = new Pen(dino, opt);
-      (TYPES[dino.art.type] || TYPES.theropod)(p);
+      ((opt && opt.plain ? null : CUSTOM[dino.id]) || TYPES[dino.art.type] || TYPES.theropod)(p);
       return p.finish(opt && opt.crop);
     }
   };

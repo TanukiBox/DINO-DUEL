@@ -10,7 +10,7 @@
  *   moves [技id, 技id], art { 絵の型と色（js/game/art.js）}
  *
  * 技 1つの書き方：
- *   name {ja, en}, power 威力, acc 命中（%）, effect 効果（なし＝null）
+ *   name {ja, en}, power 威力, acc 命中（%）, effect 効果（なし＝null）, anim 攻撃の動き（js/game/anims.js）
  *   効果：atkUp 攻撃アップ / defDown 防御ダウン / spdDown 素早さダウン / drain 回復 /
  *         aoe 全体攻撃 / priority 先制 / double 2回攻撃 / recoil 反動ダメージ
  *
@@ -21,24 +21,24 @@
   var DN = global.DN = global.DN || {};
 
   DN.MOVES = {
-    crush_fang:     { name: { ja: 'クラッシュファング', en: 'Crush Fang' },      power: 82, acc: 85,  effect: null },
-    tyrant_roar:    { name: { ja: '暴君のおたけび',     en: 'Tyrant Roar' },     power: 42, acc: 100, effect: 'atkUp' },
-    sickle_flurry:  { name: { ja: 'かぎづめ連撃',       en: 'Sickle Flurry' },   power: 34, acc: 90,  effect: 'double' },
-    quick_nip:      { name: { ja: 'すばやいかみつき',   en: 'Quick Nip' },       power: 40, acc: 100, effect: 'priority' },
-    trihorn_rush:   { name: { ja: 'トライホーン突進',   en: 'Tri-Horn Rush' },   power: 74, acc: 90,  effect: null },
-    horn_hoist:     { name: { ja: 'つのかちあげ',       en: 'Horn Hoist' },      power: 46, acc: 100, effect: 'defDown' },
-    tail_hammer:    { name: { ja: 'しっぽハンマー',     en: 'Tail Hammer' },     power: 80, acc: 80,  effect: null },
-    armor_bash:     { name: { ja: 'よろいタックル',     en: 'Armor Bash' },      power: 44, acc: 100, effect: 'spdDown' },
-    spike_tail:     { name: { ja: 'スパイクテール',     en: 'Spike Tail' },      power: 72, acc: 85,  effect: null },
-    plate_flash:    { name: { ja: '背板フラッシュ',     en: 'Plate Flash' },     power: 42, acc: 100, effect: 'defDown' },
-    giga_stomp:     { name: { ja: 'ギガストンプ',       en: 'Giga Stomp' },      power: 32, acc: 100, effect: 'aoe' },
-    longneck_whip:  { name: { ja: 'ロングネックウィップ', en: 'Long-Neck Whip' }, power: 74, acc: 85,  effect: null },
-    sky_dive:       { name: { ja: '急降下ダイブ',       en: 'Sky Dive' },        power: 70, acc: 85,  effect: null },
-    wing_gust:      { name: { ja: 'つばさ突風',         en: 'Wing Gust' },       power: 30, acc: 100, effect: 'aoe' },
-    longneck_bite:  { name: { ja: 'ロングネックバイト', en: 'Long-Neck Bite' },  power: 56, acc: 95,  effect: 'drain' },
-    riptide_swirl:  { name: { ja: 'うずしおアタック',   en: 'Riptide Swirl' },   power: 30, acc: 100, effect: 'aoe' },
-    body_press:     { name: { ja: 'ボディプレス',       en: 'Body Press' },      power: 90, acc: 90,  effect: 'recoil' },
-    thumb_spike:    { name: { ja: '親指スパイク',       en: 'Thumb Spike' },     power: 46, acc: 100, effect: 'defDown' }
+    crush_fang:     { name: { ja: 'クラッシュファング', en: 'Crush Fang' },      power: 82, acc: 85,  effect: null, anim: 'crushBite' },
+    tyrant_roar:    { name: { ja: '暴君のおたけび',     en: 'Tyrant Roar' },     power: 42, acc: 100, effect: 'atkUp', anim: 'roar' },
+    sickle_flurry:  { name: { ja: 'かぎづめ連撃',       en: 'Sickle Flurry' },   power: 34, acc: 90,  effect: 'double', anim: 'flurry' },
+    quick_nip:      { name: { ja: 'すばやいかみつき',   en: 'Quick Nip' },       power: 40, acc: 100, effect: 'priority', anim: 'quick' },
+    trihorn_rush:   { name: { ja: 'トライホーン突進',   en: 'Tri-Horn Rush' },   power: 74, acc: 90,  effect: null, anim: 'charge' },
+    horn_hoist:     { name: { ja: 'つのかちあげ',       en: 'Horn Hoist' },      power: 46, acc: 100, effect: 'defDown', anim: 'hoist' },
+    tail_hammer:    { name: { ja: 'しっぽハンマー',     en: 'Tail Hammer' },     power: 80, acc: 80,  effect: null, anim: 'tailSmash' },
+    armor_bash:     { name: { ja: 'よろいタックル',     en: 'Armor Bash' },      power: 44, acc: 100, effect: 'spdDown', anim: 'tackle' },
+    spike_tail:     { name: { ja: 'スパイクテール',     en: 'Spike Tail' },      power: 72, acc: 85,  effect: null, anim: 'tailSmash' },
+    plate_flash:    { name: { ja: '背板フラッシュ',     en: 'Plate Flash' },     power: 42, acc: 100, effect: 'defDown', anim: 'flash' },
+    giga_stomp:     { name: { ja: 'ギガストンプ',       en: 'Giga Stomp' },      power: 32, acc: 100, effect: 'aoe', anim: 'stomp' },
+    longneck_whip:  { name: { ja: 'ロングネックウィップ', en: 'Long-Neck Whip' }, power: 74, acc: 85,  effect: null, anim: 'whip' },
+    sky_dive:       { name: { ja: '急降下ダイブ',       en: 'Sky Dive' },        power: 70, acc: 85,  effect: null, anim: 'dive' },
+    wing_gust:      { name: { ja: 'つばさ突風',         en: 'Wing Gust' },       power: 30, acc: 100, effect: 'aoe', anim: 'gust' },
+    longneck_bite:  { name: { ja: 'ロングネックバイト', en: 'Long-Neck Bite' },  power: 56, acc: 95,  effect: 'drain', anim: 'bite' },
+    riptide_swirl:  { name: { ja: 'うずしおアタック',   en: 'Riptide Swirl' },   power: 30, acc: 100, effect: 'aoe', anim: 'swirl' },
+    body_press:     { name: { ja: 'ボディプレス',       en: 'Body Press' },      power: 90, acc: 90,  effect: 'recoil', anim: 'press' },
+    thumb_spike:    { name: { ja: '親指スパイク',       en: 'Thumb Spike' },     power: 46, acc: 100, effect: 'defDown', anim: 'stab' }
   };
 
   DN.DINOS = [

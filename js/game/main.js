@@ -76,7 +76,7 @@
     });
   }
 
-  $('btn-start').addEventListener('click', function () { sfx.tap(); startBattle(); });
+  $('btn-start').addEventListener('click', function () { sfx.go(); startBattle(); });
   $('btn-sound').addEventListener('click', function () { sound.toggle(); sfx.tap(); updateSoundBtn(); });
 
   // タイミングのタップ：画面のどこを押しても（PC はクリック・スペースキーでも）

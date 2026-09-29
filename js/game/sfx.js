@@ -69,6 +69,55 @@
         notes([[262, 0.36, 0.3], [392, 0.82, 0.5]], { vol: 0.07 });
       },
       defeat: function () { notes([[392, 0, 0.2], [330, 0.22, 0.2], [262, 0.44, 0.5]], { vol: 0.08 }); },
+      // ---- 技ごとの音 ----
+      /** うなり声（ためているとき） */
+      growl: function () {
+        S.synth({ f: 70, f1: 90, dur: 0.55, vol: 0.16, glide: 0.5, osc: [{ type: 'sawtooth', detune: -15 }, { type: 'sawtooth', detune: 12 }, { type: 'square', mul: 0.5, gain: 0.6 }],
+          filter: { f: 500, f1: 900, q: 4 }, vib: { rate: 28, depth: 60, delay: 0 }, env: { a: 0.08, d: 0.3, s: 0.8, r: 0.2 } });
+        S.noise({ dur: 0.5, vol: 0.06, f0: 300, f1: 500, type: 'lowpass' });
+      },
+      /** 大きなほえ声 */
+      roarBig: function () {
+        S.synth({ f: 160, f1: 70, dur: 0.9, vol: 0.2, glide: 0.9, osc: [{ type: 'sawtooth', detune: -20 }, { type: 'sawtooth', detune: 18 }, { type: 'square', mul: 0.5, gain: 0.7 }],
+          filter: { f: 1600, f1: 400, q: 3 }, vib: { rate: 30, depth: 70, delay: 0 }, env: { a: 0.05, d: 0.4, s: 0.8, r: 0.3 }, reverb: 0.4 });
+        S.noise({ dur: 0.9, vol: 0.14, f0: 1200, f1: 200, q: 0.8 });
+      },
+      /** 噛み砕く */
+      crunch: function () {
+        S.noise({ dur: 0.12, vol: 0.4, f0: 2600, f1: 800, q: 1.5 });
+        S.noise({ dur: 0.25, vol: 0.32, f0: 900, f1: 120, type: 'lowpass', delay: 0.03 });
+        S.tone({ type: 'square', f0: 140, f1: 40, dur: 0.25, vol: 0.3 });
+      },
+      slash: function () { S.noise({ dur: 0.16, vol: 0.22, f0: 5000, f1: 1500, q: 3 }); S.tone({ type: 'sawtooth', f0: 1800, f1: 600, dur: 0.1, vol: 0.05 }); },
+      zip: function () { S.tone({ type: 'triangle', f0: 600, f1: 2400, dur: 0.12, vol: 0.12 }); S.noise({ dur: 0.12, vol: 0.1, f0: 4000, f1: 2000, q: 2 }); },
+      /** 重い一撃 */
+      thud: function () {
+        S.tone({ type: 'sine', f0: 120, f1: 35, dur: 0.35, vol: 0.5 });
+        S.noise({ dur: 0.3, vol: 0.3, f0: 1400, f1: 100, type: 'lowpass' });
+      },
+      /** 足ぶみ */
+      stamp: function () { S.tone({ type: 'sine', f0: 90, f1: 40, dur: 0.14, vol: 0.28 }); S.noise({ dur: 0.1, vol: 0.08, f0: 600, f1: 200, type: 'lowpass' }); },
+      /** 力をためる */
+      charge: function (n) { S.tone({ type: 'triangle', f0: 400 + n * 200, f1: 900 + n * 300, dur: 0.18, vol: 0.08 }); },
+      zap: function () { S.tone({ type: 'sawtooth', f0: 2200, f1: 300, dur: 0.3, vol: 0.1 }); S.noise({ dur: 0.3, vol: 0.14, f0: 6000, f1: 1500, q: 1 }); },
+      /** 地ひびき */
+      quake: function () {
+        S.tone({ type: 'sine', f0: 70, f1: 28, dur: 0.7, vol: 0.55 });
+        S.noise({ dur: 0.7, vol: 0.32, f0: 500, f1: 60, type: 'lowpass' });
+      },
+      wind: function () { S.noise({ dur: 0.6, vol: 0.14, f0: 400, f1: 1800, q: 2.5 }); },
+      dive: function () { S.noise({ dur: 0.3, vol: 0.18, f0: 3000, f1: 700, q: 2 }); S.tone({ type: 'sine', f0: 1600, f1: 400, dur: 0.3, vol: 0.06 }); },
+      splash: function () { S.noise({ dur: 0.5, vol: 0.22, f0: 2500, f1: 400, q: 0.7 }); S.noise({ dur: 0.3, vol: 0.1, f0: 5000, f1: 3000, q: 2, delay: 0.1 }); },
+      /** ボタンを押した（強め） */
+      press: function () {
+        S.tone({ type: 'square', f0: 520, f1: 1040, dur: 0.07, vol: 0.09 });
+        S.noise({ dur: 0.08, vol: 0.08, f0: 3000, f1: 1200, q: 2 });
+      },
+      /** 大きなボタン */
+      go: function () {
+        notes([[523, 0], [784, 0.06], [1047, 0.12, 0.25]], { vol: 0.1 });
+        S.noise({ dur: 0.4, vol: 0.1, f0: 500, f1: 3000, q: 1.5 });
+      },
       /** カードが出てくる（段階2で使う） */
       card: function (rank) {
         S.noise({ dur: 0.5, vol: 0.1, f0: 800, f1: 3000, q: 1 });

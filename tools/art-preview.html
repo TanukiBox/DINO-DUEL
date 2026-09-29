@@ -18,8 +18,18 @@
 <script src="../js/game/config.js"></script>
 <script src="../js/game/data.js"></script>
 <script src="../js/game/art.js"></script>
+<script src="../js/game/art-tyranno.js"></script>
 <script>
   var g = document.getElementById('g');
+  var one = location.hash.slice(1);
+  if (one && DN.dino(one)) {
+    // 1体だけ大きく（例：art-preview.html#tyranno）。下は描きこむ前の型の絵
+    g.style.gridTemplateColumns = '1fr';
+    var d1 = DN.dino(one);
+    g.insertAdjacentHTML('beforeend', '<div class="cell">' + DN.art.svg(d1) + d1.name.ja + '</div>');
+    g.insertAdjacentHTML('beforeend', '<div class="cell flip">' + DN.art.svg(d1) + '相手側</div>');
+    g.insertAdjacentHTML('beforeend', '<div class="cell" style="width:40%">' + DN.art.svg(d1, { plain: true }) + '描きこむ前</div>');
+  } else {
   DN.DINOS.forEach(function (d) {
     g.insertAdjacentHTML('beforeend', '<div class="cell">' + DN.art.svg(d) + d.name.ja + '（' + d.art.type + '）</div>');
   });
@@ -29,6 +39,7 @@
   DN.DINOS.slice(0, 4).forEach(function (d) {
     g.insertAdjacentHTML('beforeend', '<div class="cell">' + DN.art.svg(d, { silhouette: true }) + 'シルエット</div>');
   });
+  }
 </script>
 </body>
 </html>
