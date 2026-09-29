@@ -158,10 +158,9 @@
     // つなぎ目：先に描いた部品（joinWith の形）の内側では輪郭線を消し、1つのシルエットにつなげる
     var mask = '';
     if (o.joinWith && !this.sil) {
-      var mid = this.id + 'j' + (this.n++), box = 'x="-40" y="-40" width="280" height="230"';
-      this.defs += '<mask id="' + mid + '" maskUnits="userSpaceOnUse" ' + box + '><rect ' + box + ' fill="#fff"/>' +
-        o.joinWith.map(function (jd) { return '<path d="' + jd + '" fill="#000"/>'; }).join('') + '</mask>';
-      mask = ' mask="url(#' + mid + ')"';
+      var mid = this.id + 'j' + (this.n++);
+      this.defs += '<clipPath id="' + mid + '"><path d="M-80 -80 H300 V250 H-80 Z ' + o.joinWith.join(' ') + '" clip-rule="evenodd"/></clipPath>';
+      mask = ' clip-path="url(#' + mid + ')"';
       this.out += '<g' + mask + '>';
     }
     this.out += '<path d="' + d + '" fill="' + (filled || 'none') + '" stroke="' + col + '" stroke-width="' + w + '" stroke-linejoin="round" stroke-linecap="round"/>';
@@ -170,15 +169,13 @@
   };
 
   /** 自動の影：形を光の向きにずらして、重ならないところに影・反対側に照り返し */
+  // 大きな四角から形をくりぬいた形（evenodd）。マスクより軽い
+  var BIG = 'M-80 -80 H300 V250 H-80 Z ';
   Pen.prototype.autoShade = function (d, a) {
-    var m1 = this.id + 'm' + (this.n++), m2 = this.id + 'm' + (this.n++);
-    var box = 'x="-40" y="-40" width="280" height="230"';
-    this.defs += '<mask id="' + m1 + '" maskUnits="userSpaceOnUse" ' + box + '><rect ' + box + ' fill="#fff"/><path d="' + d + '" fill="#000" transform="translate(' + (-a.dx) + ' ' + (-a.dy) + ')"/></mask>';
-    this.out += '<rect ' + box + ' fill="' + a.color + '" opacity="' + (a.op || 0.55) + '" mask="url(#' + m1 + ')"/>';
+    this.out += '<path d="' + BIG + d + '" fill-rule="evenodd" transform="translate(' + (-a.dx) + ' ' + (-a.dy) + ')" fill="' + a.color + '" opacity="' + (a.op || 0.55) + '"/>';
     if (a.hl !== false) {
       var h = a.hl || 0.6;
-      this.defs += '<mask id="' + m2 + '" maskUnits="userSpaceOnUse" ' + box + '><rect ' + box + ' fill="#fff"/><path d="' + d + '" fill="#000" transform="translate(' + (a.dx * h) + ' ' + (a.dy * h) + ')"/></mask>';
-      this.out += '<rect ' + box + ' fill="#fff5e0" opacity="' + (a.hlOp || 0.28) + '" mask="url(#' + m2 + ')"/>';
+      this.out += '<path d="' + BIG + d + '" fill-rule="evenodd" transform="translate(' + (a.dx * h) + ' ' + (a.dy * h) + ')" fill="#fff5e0" opacity="' + (a.hlOp || 0.28) + '"/>';
     }
   };
 
@@ -630,10 +627,23 @@
     return f;
   }
 
+  // 止まっている絵は画像（img）として使う：ブラウザが一度だけ描いて使い回すので軽い
+  var urlCache = {};
+  function url(dino, opt) {
+    var key = dino.id + '|' + JSON.stringify(opt || {});
+    if (!urlCache[key]) urlCache[key] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(DN.art.svg(dino, opt));
+    return urlCache[key];
+  }
+
   DN.art = {
     types: Object.keys(TYPES),
     shade: shade,
     fitOf: fitOf,
+    url: url,
+    /** 画像のタグ（cls = 追加のクラス） */
+    img: function (dino, opt, cls) {
+      return '<img class="dino-img' + (cls ? ' ' + cls : '') + '" src="' + url(dino, opt) + '" alt="" draggable="false">';
+    },
     /** 頭のあたりの位置（絵の幅・高さに対する割合、右向き） */
     headPoint: function (dino) {
       var b = (CUSTOM[dino.id] && CUSTOM[dino.id].box) || HEAD_BOX[dino.art.type] || [100, 20, 100];

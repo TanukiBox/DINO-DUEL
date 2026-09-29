@@ -43,7 +43,7 @@
         s.innerHTML =
           '<div class="hud"><span class="nm">' + esc(L(u.d.name)) + '</span>' +
           '<span class="hpbar"><i></i></span><span class="hpn"></span><span class="buffs"></span></div>' +
-          '<div class="sprite"><div class="body" style="animation-delay:-' + (Math.random() * 1.8).toFixed(2) + 's">' + DN.art.svg(u.d) + '</div></div>';
+          '<div class="sprite"><div class="body" style="animation-delay:-' + (Math.random() * 1.8).toFixed(2) + 's">' + DN.art.img(u.d) + '</div></div>';
         row.appendChild(s);
         slots[u.uid] = {
           root: s, hp: s.querySelector('.hpbar i'), hpn: s.querySelector('.hpn'), buffs: s.querySelector('.buffs'),
@@ -103,7 +103,7 @@
       if (!u.alive) cls += ' dead';
       else if (now !== undefined && i < now) cls += ' done';
       if (i === now) cls += ' now';
-      h += '<span class="' + cls + '">' + DN.art.svg(u.d, { crop: true }) + '</span>';
+      h += '<span class="' + cls + '">' + DN.art.img(u.d, { crop: true }) + '</span>';
     });
     o.innerHTML = h;
   }
@@ -152,7 +152,7 @@
     for (var lane = 0; lane < 3; lane++) {
       var u = st.units[lane];
       h += '<div class="cmd-row' + (u.alive ? '' : ' dead') + '" data-uid="' + u.uid + '">' +
-        '<div class="who" style="--rc:' + RC[u.d.rarity] + '"><span class="ic">' + DN.art.svg(u.d, { crop: true }) + '</span>' +
+        '<div class="who" style="--rc:' + RC[u.d.rarity] + '"><span class="ic">' + DN.art.img(u.d, { crop: true }) + '</span>' +
         '<span class="n">' + esc(L(u.d.name)) + '</span></div>' +
         moveButton(u, 0) + moveButton(u, 1) + '</div>';
     }
@@ -383,7 +383,16 @@
   // ---------------- 1体の行動 ----------------
   function slotOf(unit) {
     var sl = slots[unit.uid];
-    return { sprite: sl.sprite, body: sl.body, svg: sl.body.querySelector('svg'), root: sl.root };
+    return { sprite: sl.sprite, body: sl.body, svg: sl.body.querySelector('svg') || sl.body.querySelector('img'), root: sl.root, unit: unit };
+  }
+  /** 技を使う恐竜だけ、部品を動かせる本物の SVG にする（終わったら画像に戻す） */
+  function toLive(unit) {
+    var b = slots[unit.uid].body;
+    if (!b.querySelector('svg')) b.innerHTML = DN.art.svg(unit.d);
+  }
+  function toImage(unit) {
+    var b = slots[unit.uid].body;
+    if (b.querySelector('svg')) b.innerHTML = DN.art.img(unit.d);
   }
 
   async function playAction(act, id) {
@@ -410,6 +419,7 @@
     var t0 = performance.now(), tHit = t0 + CFG.RING_SEC * 1000;
 
     // 技ごとの動き：ためる → 当たる瞬間に合わせて打ちこむ
+    toLive(u);
     var anim = DN.Anim.get(mv);
     var c = DN.Anim.ctx({ u: u, targets: targets, mv: mv, slot: slotOf, t0: t0, tHit: tHit });
     anim.windup(c);
@@ -436,6 +446,7 @@
     targets.forEach(function (t) { slots[t.uid].root.classList.remove('targeted'); });
     await anim.recover(c);
     DN.Anim.reset(c);
+    toImage(u);
     slots[u.uid].root.classList.remove('acting');
   }
 

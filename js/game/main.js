@@ -37,7 +37,7 @@
   // ---- タイトル ----
   function buildTitle() {
     applyText($('title'));
-    $('t-dinos').innerHTML = TEAM.map(function (id) { return '<div>' + DN.art.svg(DN.dino(id)) + '</div>'; }).join('');
+    $('t-dinos').innerHTML = TEAM.map(function (id) { return '<div>' + DN.art.img(DN.dino(id)) + '</div>'; }).join('');
     var row = $('lv-row');
     row.innerHTML = '';
     DN.CFG.AI_LEVELS.forEach(function (lv, i) {

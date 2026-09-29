@@ -105,8 +105,15 @@
     if (!svg) return;
     o = o || {};
     var f = FX.fieldRect(), r = svg.getBoundingClientRect();
-    var g = svg.cloneNode(true);
-    g.classList.add('ghost');
+    var g;
+    if (o.dino) {
+      g = document.createElement('img');
+      g.src = DN.art.url(o.dino);
+      g.className = 'ghost';
+    } else {
+      g = svg.cloneNode(true);
+      g.classList.add('ghost');
+    }
     g.style.left = (r.left - f.left) + 'px';
     g.style.top = (r.top - f.top) + 'px';
     g.style.width = r.width + 'px';
@@ -299,7 +306,7 @@
       c.s.body.animate([{ filter: 'drop-shadow(0 0 0 ' + color + ')' }, { filter: 'drop-shadow(0 0 10px ' + color + ') drop-shadow(0 0 4px ' + color + ') brightness(1.25)' }, { filter: 'drop-shadow(0 0 0 ' + color + ')' }],
         { duration: dur || 600, easing: 'ease-in-out' });
     };
-    c.ghost = function (op) { FX.ghost(c.s.svg, { flip: !c.mine, op: op || 0.45 }); };
+    c.ghost = function (op) { FX.ghost(c.s.svg, { flip: !c.mine, op: op || 0.45, dino: o.u.d }); };
     c.ghosts = function (n, gap, op) { for (var i = 0; i < n; i++) setTimeout(function () { c.ghost(op); }, i * gap); };
     /** 相手をはじき飛ばす */
     c.knock = function (t, dist, up, dur) {

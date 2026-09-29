@@ -93,12 +93,11 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   background: linear-gradient(100deg, transparent, rgba(255,255,255,0.8), transparent);
   transform: skewX(-20deg);
   animation: shine 2.4s ease-in-out infinite;
+  will-change: transform;
 }
 .btn.big:active { transform: translateY(6px) scale(0.98); box-shadow: 0 1px 0 var(--ink), inset 0 0 0 3px rgba(255,255,255,0.35); animation: none; }
-@keyframes bigPulse {
-  0%, 100% { box-shadow: 0 7px 0 var(--ink), 0 0 0 3px rgba(255,210,60,0.35), inset 0 0 0 3px rgba(255,255,255,0.35), inset 0 -6px 0 rgba(160,50,0,0.35); }
-  50% { box-shadow: 0 7px 0 var(--ink), 0 0 0 6px rgba(255,210,60,0.2), 0 0 26px 6px rgba(255,170,40,0.55), inset 0 0 0 3px rgba(255,255,255,0.35), inset 0 -6px 0 rgba(160,50,0,0.35); }
-}
+@keyframes bigPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+
 .btn.small { font-size: 13px; padding: 6px 12px; border-width: 2px; box-shadow: 0 3px 0 var(--ink); border-radius: 10px; }
 .btn.x { background: #111; color: #fff; }
 
@@ -156,7 +155,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   align-items: flex-end;
 }
 .t-dinos > div { height: 100%; aspect-ratio: 4 / 3; margin: 0 -10px; }
-.t-dinos .dino-svg { width: 100%; height: 100%; display: block; }
+.t-dinos .dino-svg, .t-dinos .dino-img { width: 100%; height: 100%; display: block; object-fit: contain; }
 .t-dinos > div:nth-child(2) { z-index: 1; transform: scale(1.15); transform-origin: bottom; }
 
 .t-bottom {
@@ -297,9 +296,11 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   align-items: flex-end;
   z-index: 2;
 }
-.sprite .body { height: 100%; aspect-ratio: 4 / 3; max-width: 100%; display: flex; align-items: flex-end; animation: bob 1.8s ease-in-out infinite; }
-.sprite .dino-svg { width: 100%; height: auto; display: block; overflow: visible; }
-.slot.foe .dino-svg { transform: scaleX(-1); }
+.sprite .body { height: 100%; aspect-ratio: 4 / 3; max-width: 100%; display: flex; align-items: flex-end; animation: bob 1.8s ease-in-out infinite; will-change: transform; }
+.sprite { will-change: transform; }
+.sprite .dino-svg, .sprite .dino-img { width: 100%; height: auto; display: block; overflow: visible; }
+.slot.foe .dino-svg, .slot.foe .dino-img { transform: scaleX(-1); }
+.dino-img { -webkit-user-drag: none; user-select: none; pointer-events: none; }
 .slot.acting { z-index: 6; }
 .slot.dead .body { animation: none; filter: grayscale(1) brightness(0.75); opacity: 0.45; transform: rotate(10deg) translateY(12%); transition: all 0.6s ease-in; }
 .slot.foe.dead .body { transform: rotate(-10deg) translateY(12%); }
@@ -438,8 +439,8 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   transition: transform 0.15s, opacity 0.2s;
 }
 .oi.foe { background: var(--foe); }
-.oi svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.oi.foe svg { transform: scaleX(-1); }
+.oi svg, .oi img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.oi.foe svg, .oi.foe img { transform: scaleX(-1); }
 .oi.now { transform: scale(1.22); border-color: #fff; box-shadow: 0 0 0 2px var(--gold), 0 0 12px var(--gold); z-index: 2; }
 .oi.done { opacity: 0.4; }
 .oi.dead { opacity: 0.25; filter: grayscale(1); }
@@ -479,7 +480,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   text-align: center;
 }
 .who .ic { width: 40px; height: 40px; }
-.who .ic svg { width: 100%; height: 100%; }
+.who .ic svg, .who .ic img { width: 100%; height: 100%; display: block; }
 .who .n { max-width: 58px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mv {
   --k1: #6a7a98; --k2: #3a4660; --kg: #9fb2d8;
@@ -508,8 +509,9 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   animation: shine 3.6s ease-in-out infinite;
   animation-delay: var(--sd, 0s);
   pointer-events: none;
+  will-change: transform;
 }
-@keyframes shine { 0%, 70% { left: -60%; } 100% { left: 130%; } }
+@keyframes shine { 0%, 70% { transform: translateX(0) skewX(-20deg); } 100% { transform: translateX(480%) skewX(-20deg); } }
 .mv:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink), inset 0 0 0 2px rgba(255,255,255,0.22); }
 .mv-ic {
   position: absolute; left: 5px; top: 50%;
@@ -562,7 +564,6 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .mv.sel {
   transform: translateY(3px);
   box-shadow: 0 2px 0 var(--ink), 0 0 0 3px var(--gold), 0 0 16px 3px var(--kg), inset 0 0 0 2px rgba(255,255,255,0.5);
-  animation: selGlow 0.9s ease-in-out infinite alternate;
 }
 .mv.sel::before {
   content: '\2714';
@@ -611,6 +612,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 .pad.wait { background: radial-gradient(circle at 50% 55%, #2c3560, #171d36 70%); }
 /* 回る光の筋 */
 .pad-rays {
+  will-change: transform;
   position: absolute;
   left: 50%; top: 52%;
   width: 640px; height: 640px;
@@ -802,17 +804,7 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   .howto { display: none; }
 }
 
-/* ---------- 恐竜の部品のふだんの動き（描きこみ版） ---------- */
-.dino-svg .p-tail { animation: pTail 2.8s ease-in-out infinite; }
-.dino-svg .p-head { animation: pHead 2.8s ease-in-out infinite; }
-.dino-svg .p-jaw { animation: pJaw 2.8s ease-in-out infinite; }
-.dino-svg .p-body { animation: pBody 2.8s ease-in-out infinite; }
-.dino-svg .p-armF, .dino-svg .p-armB { animation: pArm 2.8s ease-in-out infinite; }
-@keyframes pTail { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg); } }
-@keyframes pHead { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-3deg); } }
-@keyframes pJaw { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(5deg); } }
-@keyframes pBody { 0%, 100% { transform: scale(1, 1); } 50% { transform: scale(1.01, 1.03); } }
-@keyframes pArm { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(8deg); } }
+/* ---------- 恐竜の部品は、技を使うときだけ動かす（待機中は絵を画像にして軽くする） ---------- */
 .slot.dead .dino-svg * { animation: none !important; }
 .slot.pumped .body { animation: bob 1.8s ease-in-out infinite, pumped 0.6s ease-in-out infinite alternate; }
 @keyframes pumped {
