@@ -154,8 +154,19 @@
     var col = o.ol || OL, lw = o.lw || LW;
     var weight = (o.ink && !this.noInk) ? inkWeight(d, lw, col) : null;
     var w = weight ? lw * INK.thin : lw;
+    if (filled && o.joinWith) { this.out += '<path d="' + d + '" fill="' + filled + '"/>'; filled = null; }
+    // つなぎ目：先に描いた部品（joinWith の形）の内側では輪郭線を消し、1つのシルエットにつなげる
+    var mask = '';
+    if (o.joinWith && !this.sil) {
+      var mid = this.id + 'j' + (this.n++), box = 'x="-40" y="-40" width="280" height="230"';
+      this.defs += '<mask id="' + mid + '" maskUnits="userSpaceOnUse" ' + box + '><rect ' + box + ' fill="#fff"/>' +
+        o.joinWith.map(function (jd) { return '<path d="' + jd + '" fill="#000"/>'; }).join('') + '</mask>';
+      mask = ' mask="url(#' + mid + ')"';
+      this.out += '<g' + mask + '>';
+    }
     this.out += '<path d="' + d + '" fill="' + (filled || 'none') + '" stroke="' + col + '" stroke-width="' + w + '" stroke-linejoin="round" stroke-linecap="round"/>';
     if (weight) this.out += weight;
+    if (mask) this.out += '</g>';
   };
 
   /** 自動の影：形を光の向きにずらして、重ならないところに影・反対側に照り返し */
@@ -295,15 +306,18 @@
   Pen.prototype.finish = function (crop) {
     var size = this.a.size || 1;
     var vb = '0 0 200 150';
+    var fit = this.fit;
     if (crop) {
       var b = this.headBox || HEAD_BOX[this.a.type] || [100, 20, 100];
       var x = 100 + (b[0] - 100) * size, y = 146 + (b[1] - 146) * size, w = b[2] * size;
+      if (fit) { x = 100 + (x - 100) * fit.s + fit.dx; y = 146 + (y - 146) * fit.s; w = w * fit.s; }
       vb = x.toFixed(1) + ' ' + y.toFixed(1) + ' ' + w.toFixed(1) + ' ' + w.toFixed(1);
     }
     var grad = '<linearGradient id="' + this.id + 'g" gradientUnits="userSpaceOnUse" x1="0" y1="10" x2="0" y2="146">' +
       '<stop offset="0" stop-color="#fff" stop-opacity="0.28"/><stop offset="0.42" stop-color="#fff" stop-opacity="0"/>' +
       '<stop offset="0.7" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.28"/></linearGradient>';
-    var body = '<g transform="translate(100 146) scale(' + size + ') translate(-100 -146)">' + this.out + '</g>';
+    var body = '<g class="dz-root" transform="translate(100 146) scale(' + size + ') translate(-100 -146)">' + this.out + '</g>';
+    if (fit) body = '<g transform="translate(' + fit.dx.toFixed(2) + ' 0) translate(100 146) scale(' + fit.s.toFixed(4) + ') translate(-100 -146)">' + body + '</g>';
     var shadow = this.a.type === 'pterosaur' || crop ? '' : '<ellipse cx="100" cy="146" rx="' + (70 * size) + '" ry="5" fill="#000" opacity="0.18"/>';
     return '<svg class="dino-svg" viewBox="' + vb + '" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>' + grad + this.defs + '</defs>' + shadow + body + '</svg>';
   };
@@ -572,19 +586,68 @@
   // ================= 1体ずつ描きこんだ恐竜 =================
   var CUSTOM = DN.ART_CUSTOM = DN.ART_CUSTOM || {};
 
+  // ================= 枠に収める =================
+  // 描きこみ版は、絵の実際の大きさをブラウザで一度だけ測り、200×150 の枠（ふちに少し余白）から
+  // はみ出す分だけ縮めて左右をずらす（しっぽの先や鼻先が切れないように）。
+  var FIT_MARGIN = 5;
+  var fitCache = {};
+  var measureBox = null;
+  function fitOf(dino) {
+    if (!CUSTOM[dino.id] || typeof document === 'undefined' || !document.body) return null;
+    if (fitCache[dino.id] !== undefined) return fitCache[dino.id];
+    if (!measureBox) {
+      measureBox = document.createElement('div');
+      measureBox.style.cssText = 'position:absolute;left:-9999px;top:0;width:400px;height:300px;visibility:hidden;pointer-events:none';
+      document.body.appendChild(measureBox);
+    }
+    measureBox.innerHTML = DN.art.svg(dino, { noFit: true });
+    var root = measureBox.querySelector('.dz-root'), bb = null;
+    try {
+      // 見えている形だけを測る（部品の中に切り抜かれた影や模様は除く）
+      var inv = root.getCTM().inverse(), ax = 1e9, ay = 1e9, bx = -1e9, by = -1e9;
+      root.querySelectorAll('path, ellipse, circle, rect, polygon').forEach(function (el) {
+        if (el.closest('[clip-path]') || el.closest('defs') || el.closest('mask')) return;
+        var b = el.getBBox();
+        if (!b.width && !b.height) return;
+        var m = inv.multiply(el.getCTM());
+        [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]].forEach(function (q) {
+          var X = m.a * q[0] + m.c * q[1] + m.e, Y = m.b * q[0] + m.d * q[1] + m.f;
+          ax = Math.min(ax, X); ay = Math.min(ay, Y); bx = Math.max(bx, X); by = Math.max(by, Y);
+        });
+      });
+      if (bx > ax) bb = { x: ax - 1.5, y: ay - 1.5, width: bx - ax + 3, height: by - ay + 3 };
+    } catch (e) { bb = null; }
+    measureBox.innerHTML = '';
+    if (!bb || !bb.width) { fitCache[dino.id] = null; return null; }
+    var size = dino.art.size || 1, M = FIT_MARGIN;
+    var x0 = 100 + (bb.x - 100) * size, x1 = 100 + (bb.x + bb.width - 100) * size, y0 = 146 + (bb.y - 146) * size;
+    var sc = Math.min(1, (200 - 2 * M) / (x1 - x0), y0 < M ? (146 - M) / (146 - y0) : 1);
+    var X0 = 100 + (x0 - 100) * sc, X1 = 100 + (x1 - 100) * sc, dx = 0;
+    if (X0 < M) dx = M - X0;
+    if (X1 + dx > 200 - M) dx = 200 - M - X1;
+    var f = (sc < 0.999 || Math.abs(dx) > 0.01) ? { s: sc, dx: dx, box: [x0, y0, x1] } : null;
+    fitCache[dino.id] = f;
+    return f;
+  }
+
   DN.art = {
     types: Object.keys(TYPES),
     shade: shade,
+    fitOf: fitOf,
     /** 頭のあたりの位置（絵の幅・高さに対する割合、右向き） */
     headPoint: function (dino) {
       var b = (CUSTOM[dino.id] && CUSTOM[dino.id].box) || HEAD_BOX[dino.art.type] || [100, 20, 100];
       var size = dino.art.size || 1;
       var cx = 100 + (b[0] + b[2] / 2 - 100) * size, cy = 146 + (b[1] + b[2] / 2 - 146) * size;
+      var f = fitOf(dino);
+      if (f) { cx = 100 + (cx - 100) * f.s + f.dx; cy = 146 + (cy - 146) * f.s; }
       return [cx / 200, cy / 150];
     },
     svg: function (dino, opt) {
       var p = new Pen(dino, opt);
-      ((opt && opt.plain ? null : CUSTOM[dino.id]) || TYPES[dino.art.type] || TYPES.theropod)(p);
+      var custom = opt && opt.plain ? null : CUSTOM[dino.id];
+      if (custom && !(opt && opt.noFit)) p.fit = fitOf(dino);
+      (custom || TYPES[dino.art.type] || TYPES.theropod)(p);
       return p.finish(opt && opt.crop);
     }
   };
