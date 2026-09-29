@@ -18,11 +18,27 @@
 <script src="../js/game/config.js"></script>
 <script src="../js/game/data.js"></script>
 <script src="../js/game/art.js"></script>
+<script src="../js/game/art-kit.js"></script>
 <script src="../js/game/art-tyranno.js"></script>
+<script src="../js/game/art-raptor.js"></script>
+<script src="../js/game/art-triceratops.js"></script>
+<script src="../js/game/art-ankylo.js"></script>
+<script src="../js/game/art-stego.js"></script>
+<script src="../js/game/art-brachio.js"></script>
+<script src="../js/game/art-iguano.js"></script>
+<script src="../js/game/art-pterano.js"></script>
+<script src="../js/game/art-elasmo.js"></script>
 <script>
   var g = document.getElementById('g');
   var one = location.hash.slice(1);
-  if (one && DN.dino(one)) {
+  if (one === 'detail') {
+    // 描きこみ版だけを2列で（動きを止めて）
+    g.style.gridTemplateColumns = '1fr 1fr';
+    DN.DINOS.filter(function (d) { return DN.ART_CUSTOM[d.id]; }).forEach(function (d) {
+      g.insertAdjacentHTML('beforeend', '<div class="cell">' + DN.art.svg(d) + d.name.ja + '</div>');
+    });
+    document.querySelectorAll('[class^="p-"]').forEach(function (e) { e.style.animation = 'none'; });
+  } else if (one && DN.dino(one)) {
     // 1体だけ大きく（例：art-preview.html#tyranno）。下は描きこむ前の型の絵
     var d1 = DN.dino(one);
     g.style.gridTemplateColumns = '1fr 1fr';

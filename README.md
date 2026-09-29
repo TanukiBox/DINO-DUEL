@@ -35,14 +35,15 @@
 | `js/game/battle.js` | バトルのルール（行動順・攻撃相手・ダメージ・技の効果・相手AI）。画面を使わない計算だけ |
 | `js/game/battle-view.js` | バトル画面（場・行動順・技えらび・タイミングの輪・演出） |
 | `js/game/art.js` | 恐竜の SVG イラスト（体型8種を色・模様・頭の形・大きさで描き分け） |
-| `js/game/art-tyranno.js` | 描きこみ版のティラノサウルス（あご・頭・しっぽ・足・腕を部品に分けて、技で別々に動かせる） |
+| `js/game/art-kit.js` | 描きこみ版を描くための道具（手描き風の線・自動の影・歯・爪・目の描き方） |
+| `js/game/art-<恐竜>.js` | 描きこみ版の恐竜（1体1ファイル。頭・あご・しっぽ・脚などを部品に分けて、技で別々に動かせる） |
 | `js/game/anims.js` | 技ごとの攻撃アニメーション（ためる→打ちこむ→当たる→戻る）と演出の部品（残像・スピード線・噛みつき跡・衝撃波・擬音・ヒットストップ） |
 | `js/game/sfx.js` | 効果音 |
 | `js/game/lang.js` | 画面の文字（日本語・英語） |
 | `js/game/share.js` | X シェア（文章とゲームの URL） |
 | `js/game/main.js` | 起動・画面の切りかえ・セーブ |
 | `tools/sim.js` | バランス確認用シミュレーション（`node tools/sim.js`） |
-| `tools/art-preview.html` | 全恐竜の絵を並べて確認するページ（`#tyranno` を付けると1体だけ大きく、描きこむ前と並べて表示） |
+| `tools/art-preview.html` | 全恐竜の絵を並べて確認するページ（`#detail` で描きこみ版だけを並べる、`#tyranno` などで1体だけ大きく） |
 | `tools/serve.py` | キャッシュしない確認用サーバー |
 
 ## バランス確認
@@ -55,4 +56,4 @@ node tools/sim.js 10000    # 回数を変える
 ## 公開のしかた（GitHub Pages・無料）
 - リポジトリは GitHub の組織 **TanukiBox**（TanukiBox/DINO-DUEL）。
 - Settings → Pages → Source を **Deploy from a branch**、Branch を **main** / **(root)**。main に push すると1〜2分で https://tanukibox.github.io/DINO-DUEL/ が更新される。
-- 更新がスマホに出ないときは、`index.html` の `?v=5` の数字を1つ上げる（css と js すべて）。
+- 更新がスマホに出ないときは、`index.html` の `?v=6` の数字を1つ上げる（css と js すべて）。
