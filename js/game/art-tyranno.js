@@ -52,27 +52,30 @@
   var LEG_SHADE = 'M40 60 L92 80 C84 96 88 112 100 124 C97 132 97 140 99 146 L40 146 Z';
 
   CUSTOM.tyranno = function (p) {
-    var flat = function (extra) { return Object.assign({ lw: LW, ol: C.ink, skin: true, pattern: false, tex: false, shade: false }, extra || {}); };
+    var flat = function (extra) { return Object.assign({ lw: LW, ol: C.ink, ink: true, skin: true, pattern: false, tex: false, shade: false }, extra || {}); };
+    // 自動の影（形を光の向きにずらした差分）。dx, dy = ずらす量
+    var AUTO = function (dx, dy, op) { return { dx: dx, dy: dy, color: C.shade, op: op || 0.95, hl: 0.5, hlOp: 0.32 }; };
     p.headBox = CUSTOM.tyranno.box;
 
     // ---- 奥の足 ----
     p.open('p-legB', 70, 96);
     p.raw('<g transform="translate(-30 0)">');
-    p.part(LEG, C.deep, flat({ inner: '<path d="' + LEG_SHADE + '" fill="' + C.shade + '" opacity="0.5"/>' }));
+    p.part(LEG, C.deep, flat({ auto: { dx: 3.5, dy: 4, color: '#8a5530', op: 0.8, hl: false }, innerFlat: '<path d="' + LEG_SHADE + '" fill="' + C.shade + '" opacity="0.5"/>' }));
     p.detail(toeClaw(109, 146, 0.9) + toeClaw(118, 146, 0.95) + toeClaw(126.4, 146, 0.85));
     p.raw('</g>');
     p.close();
 
     // ---- 奥の腕 ----
     p.open('p-armB', 128, 90);
-    p.part('M124 86 C129 88 133 94 134 100 L139 103 C140 105 138 107 136 106 L133 104 L133 108 C132 110 129 109 129 107 L127 103 C124 98 122 92 124 86 Z', C.deep, { lw: 1.9, ol: C.ink });
+    p.part('M124 86 C129 88 133 94 134 100 L139 103 C140 105 138 107 136 106 L133 104 L133 108 C132 110 129 109 129 107 L127 103 C124 98 122 92 124 86 Z', C.deep, { lw: 1.9, ol: C.ink, ink: true });
     p.close();
 
     // ---- しっぽ ----
     p.open('p-tail', 78, 84);
     p.part('M80 66 C62 66 40 62 24 54 C16 50 10 46 4 42 C5 50 10 60 20 68 C34 80 54 90 76 98 Z', C.body, flat({
       belly: 'M9 45 C11 53 17 61 25 67 C39 77 57 87 79 93 L82 130 L0 130 L0 45 Z',
-      inner: stripe(64, 66, 10, -2, 5) + stripe(50, 63, 8, -2, 4.4) + stripe(37, 58.6, 6, -1.6, 3.6)
+      inner: stripe(64, 66, 10, -2, 5) + stripe(50, 63, 8, -2, 4.4) + stripe(37, 58.6, 6, -1.6, 3.6),
+      auto: AUTO(2.8, 4.2)
     }));
     p.close();
 
@@ -84,19 +87,19 @@
         // 頭の下の影
         '<path d="M124 42 C132 54 142 62 152 58 L154 40 Z" fill="' + C.shade + '"/>' +
         // 背中のしま
-        stripe(84, 58, 14, -3, 5.4) + stripe(96, 51, 17, -3, 6) + stripe(108, 46, 18, -2, 6) + stripe(119, 42, 14, -1, 5.2) +
-        // おなかの影（下のふち）
-        '<path d="M70 104 C78 118 94 126 112 124 C128 122 138 112 142 98 L150 130 L60 130 Z" fill="' + C.shade + '" opacity="0.35"/>'
+        stripe(84, 58, 14, -3, 5.4) + stripe(96, 51, 17, -3, 6) + stripe(108, 46, 18, -2, 6) + stripe(119, 42, 14, -1, 5.2),
+      auto: AUTO(6, 8, 0.85),
+      innerFlat: '<path d="M70 104 C78 118 94 126 112 124 C128 122 138 112 142 98 L150 130 L60 130 Z" fill="' + C.shade + '" opacity="0.35"/>'
     }));
     // 太ももの線（体に食いこむところ）
-    p.detail(ln('M86 90 C92 84 102 82 110 86', 1.6));
+    p.stroke('M86 90 C92 84 102 82 110 86', 2, C.ink);
     p.close();
 
     // ---- 手前の足 ----
     p.open('p-legF', 100, 96);
-    p.part(LEG, C.body, flat({ inner: '<path d="' + LEG_SHADE + '" fill="' + C.shade + '"/>' }));
+    p.part(LEG, C.body, flat({ auto: AUTO(5, 6), innerFlat: '<path d="' + LEG_SHADE + '" fill="' + C.shade + '"/>' }));
     p.detail(toeClaw(109, 146) + toeClaw(118.4, 146, 1.05) + toeClaw(127, 146, 0.9));
-    p.detail(ln('M104 128 C108 130 110 133 110 136', 1.4));
+    p.stroke('M104 128 C108 130 110 133 110 136', 1.8, C.ink);
     p.close();
 
     // ---- 頭 ----
@@ -111,7 +114,8 @@
       '<path d="M152 55 C160 55.4 167 57 173 59.6" fill="none" stroke="' + C.mouth + '" stroke-width="1" opacity="0.5"/>');
     p.detail(tooth(147.6, 53.4, 5, 6, -1) + tooth(155.6, 56.2, 5.4, 7, -1) + tooth(163.6, 59, 5.4, 7, -1) + tooth(171.4, 61.8, 5, 6.4, -1) + tooth(178.4, 64.2, 4.2, 5, -1));
     p.part('M135 49 L181 65 C185 66 186.4 69.4 184 72.4 C173 78.4 155 79 142 73 C134 68.6 132 58 135 49 Z', C.body, flat({
-      belly: 'M128 71 C148 79.6 170 78 192 70 L192 92 L128 92 Z', bellyFill: C.shade
+      belly: 'M128 71 C148 79.6 170 78 192 70 L192 92 L128 92 Z', bellyFill: C.shade,
+      auto: AUTO(1.6, 2.6, 0.6)
     }));
     p.close(); // p-jaw
 
@@ -124,8 +128,9 @@
       belly: 'M118 42 C140 45 170 41 202 35 L202 60 L118 60 Z', bellyFill: C.shade,
       inner:
         // 頭のうしろの影・しま
-        '<path d="M118 20 C122 34 128 44 138 52 L110 60 Z" fill="' + C.shade + '" opacity="0.6"/>' +
-        stripe(134, 14, 7, -2, 4) + stripe(142, 10, 6, -1.6, 3.6)
+        stripe(134, 14, 7, -2, 4) + stripe(142, 10, 6, -1.6, 3.6),
+      auto: AUTO(4, 5.4, 0.85),
+      innerFlat: '<path d="M118 20 C122 34 128 44 138 52 L110 60 Z" fill="' + C.shade + '" opacity="0.6"/>'
     }));
     if (!p.sil) {
       // 目（大きめ）
@@ -135,18 +140,19 @@
       p.raw('<circle cx="160.4" cy="21" r="1.7" fill="#fff"/>');
       p.raw('<circle cx="164.4" cy="25.8" r="0.8" fill="#fff"/>');
       // まゆ（キリッと）
-      p.raw('<path d="M150.4 13.6 C156 12.4 163 14 170.6 18.2" fill="none" stroke="' + C.ink + '" stroke-width="3" stroke-linecap="round"/>');
-      p.raw('<path d="M147 9.6 C150 7.4 154 7 157 8" fill="none" stroke="' + C.ink + '" stroke-width="1.5" stroke-linecap="round"/>');
+      p.stroke('M150.4 13.6 C156 12.4 163 14 170.6 18.2', 3.6, C.ink);
+      p.stroke('M147 9.6 C150 7.4 154 7 157 8', 1.8, C.ink);
       // 鼻の穴・ほおの線
-      p.raw(ln('M186.6 19.2 C188.6 17.8 191 18 192.2 19.6', 1.8));
-      p.raw(ln('M133 40 C136.6 42.6 137.8 46.4 136.4 50', 1.6));
+      p.stroke('M186.6 19.2 C188.6 17.8 191 18 192.2 19.6', 2.2, C.ink);
+      p.stroke('M133 40 C136.6 42.6 137.8 46.4 136.4 50', 2, C.ink);
     }
     p.close(); // p-head
 
     // ---- 手前の腕 ----
     p.open('p-armF', 134, 88);
     p.part('M131 84 C137 86 141 92 142 99 L147 102 C148.6 104 147 106.6 145 105.6 L141.6 103.6 L141.8 107.6 C141 110 138 109.6 137.6 107.4 L136 102 C133 96 130 90 131 84 Z', C.body, flat({
-      inner: '<path d="M126 84 C131 90 134 96 136 104 L126 110 Z" fill="' + C.shade + '"/>', lw: 1.9
+      innerFlat: '<path d="M126 84 C131 90 134 96 136 104 L126 110 Z" fill="' + C.shade + '"/>', lw: 1.9,
+      auto: AUTO(1.8, 2.4)
     }));
     p.detail('<path d="M145.6 103.2 L148.6 105.4 L145.2 106.2 Z M139.8 107 L141 110.6 L137.8 109.2 Z" fill="' + C.claw + '" stroke="' + C.ink + '" stroke-width="1" stroke-linejoin="round"/>');
     p.close();

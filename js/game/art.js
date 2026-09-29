@@ -44,12 +44,96 @@
     };
   }
 
+  // ---- 手描き風の線（入り抜き・線の強弱） ----
+  // 輪郭をブラウザで細かく点に分け、光の当たらない側（右下）ほど外側に太らせる。
+  // 開いた線（しわ・まゆ など）は両端を細く抜く。結果は形ごとに覚えておく（2回目からは計算しない）。
+  var INK = {
+    light: [-0.55, -0.83],   // 光の来る向き（左上）
+    extra: 1.5,              // 影の側で太らせる量（線の太さに対する割合）
+    thin: 0.62,              // 光の側の線の太さ（元の太さに対する割合）
+    step: 1.6                // 点の間隔
+  };
+  var inkCache = {};
+  var probe = null;
+  function samplePath(d) {
+    if (typeof document === 'undefined' || !document.createElementNS) return null;
+    if (!probe) probe = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    probe.setAttribute('d', d);
+    var len = 0;
+    try { len = probe.getTotalLength(); } catch (e) { return null; }
+    if (!len) return null;
+    var n = Math.max(10, Math.ceil(len / INK.step)), pts = [];
+    for (var i = 0; i <= n; i++) { var q = probe.getPointAtLength(len * i / n); pts.push([q.x, q.y]); }
+    return pts;
+  }
+  function f1(v) { return v.toFixed(2); }
+  function ptsToPath(a, b) {
+    return 'M' + a.map(function (q) { return f1(q[0]) + ' ' + f1(q[1]); }).join(' L') +
+      ' L' + b.reverse().map(function (q) { return f1(q[0]) + ' ' + f1(q[1]); }).join(' L') + 'Z';
+  }
+  /** 閉じた輪郭：影の側に足す太り（リボン状の形） */
+  function inkWeight(d, lw, color) {
+    var key = 'w|' + lw + '|' + d;
+    if (inkCache[key] === undefined) {
+      var pts = samplePath(d), out = '';
+      if (pts && (d.match(/M/gi) || []).length === 1) {
+        var n = pts.length - 1, cx = 0, cy = 0, i;
+        for (i = 0; i < n; i++) { cx += pts[i][0]; cy += pts[i][1]; }
+        cx /= n; cy /= n;
+        var nor = [], sgn = 0;
+        for (i = 0; i <= n; i++) {
+          var a = pts[i === 0 ? n - 1 : i - 1], b = pts[i === n ? 1 : i + 1];
+          var tx = b[0] - a[0], ty = b[1] - a[1], tl = Math.sqrt(tx * tx + ty * ty) || 1;
+          var nx = ty / tl, ny = -tx / tl;
+          nor.push([nx, ny]);
+          sgn += nx * (pts[i][0] - cx) + ny * (pts[i][1] - cy);
+        }
+        var k = sgn < 0 ? -1 : 1, outer = [], inner = [];
+        for (i = 0; i <= n; i++) {
+          var mx = nor[i][0] * k, my = nor[i][1] * k;
+          var sh = Math.max(0, -(mx * INK.light[0] + my * INK.light[1]));
+          var wob = 1 + 0.12 * Math.sin(i * 0.9) * Math.sin(i * 0.23);
+          var e = lw * INK.extra * sh * sh * (3 - 2 * sh) * wob;
+          var r0 = lw * INK.thin / 2 - 0.15;
+          inner.push([pts[i][0] + mx * r0, pts[i][1] + my * r0]);
+          outer.push([pts[i][0] + mx * (r0 + e), pts[i][1] + my * (r0 + e)]);
+        }
+        out = ptsToPath(outer, inner);
+      }
+      inkCache[key] = out;
+    }
+    return inkCache[key] ? '<path d="' + inkCache[key] + '" fill="' + color + '"/>' : null;
+  }
+  /** 開いた線：両端を細く抜いた線（塗りの形） */
+  function inkStroke(d, lw, color) {
+    var key = 's|' + lw + '|' + d;
+    if (inkCache[key] === undefined) {
+      var pts = samplePath(d), out = '';
+      if (pts && (d.match(/M/gi) || []).length === 1) {
+        var n = pts.length - 1, L = [], R = [];
+        for (var i = 0; i <= n; i++) {
+          var a = pts[Math.max(0, i - 1)], b = pts[Math.min(n, i + 1)];
+          var tx = b[0] - a[0], ty = b[1] - a[1], tl = Math.sqrt(tx * tx + ty * ty) || 1;
+          var nx = ty / tl, ny = -tx / tl, t = i / n;
+          var w = lw * (0.18 + 0.95 * Math.pow(Math.sin(Math.PI * t), 0.55)) * (1 + 0.1 * Math.sin(i * 1.3)) / 2;
+          L.push([pts[i][0] + nx * w, pts[i][1] + ny * w]);
+          R.push([pts[i][0] - nx * w, pts[i][1] - ny * w]);
+        }
+        out = ptsToPath(L, R);
+      }
+      inkCache[key] = out;
+    }
+    return inkCache[key] ? '<path d="' + inkCache[key] + '" fill="' + color + '"/>' : null;
+  }
+
   // ---- 部品を描く道具 ----
   function Pen(dino, opt) {
     this.id = 'dz' + (++uid);
     this.n = 0;
     this.a = dino.art;
     this.sil = !!(opt && opt.silhouette);
+    this.noInk = !!(opt && opt.noInk) || this.sil;       // 手描き風の線を使わない（比べる用）
+    this.noAuto = !!(opt && opt.noAuto) || this.sil;     // 自動の影を使わない（比べる用）
     this.rnd = seeded(dino.id);
     this.defs = '';
     this.out = '';
@@ -65,12 +149,34 @@
 
   Pen.prototype.fillOf = function (c) { return this.sil ? '#3a3040' : c; };
 
+  /** 輪郭の線（o.ink なら手描き風） */
+  Pen.prototype.outline = function (d, o, filled) {
+    var col = o.ol || OL, lw = o.lw || LW;
+    var weight = (o.ink && !this.noInk) ? inkWeight(d, lw, col) : null;
+    var w = weight ? lw * INK.thin : lw;
+    this.out += '<path d="' + d + '" fill="' + (filled || 'none') + '" stroke="' + col + '" stroke-width="' + w + '" stroke-linejoin="round" stroke-linecap="round"/>';
+    if (weight) this.out += weight;
+  };
+
+  /** 自動の影：形を光の向きにずらして、重ならないところに影・反対側に照り返し */
+  Pen.prototype.autoShade = function (d, a) {
+    var m1 = this.id + 'm' + (this.n++), m2 = this.id + 'm' + (this.n++);
+    var box = 'x="-40" y="-40" width="280" height="230"';
+    this.defs += '<mask id="' + m1 + '" maskUnits="userSpaceOnUse" ' + box + '><rect ' + box + ' fill="#fff"/><path d="' + d + '" fill="#000" transform="translate(' + (-a.dx) + ' ' + (-a.dy) + ')"/></mask>';
+    this.out += '<rect ' + box + ' fill="' + a.color + '" opacity="' + (a.op || 0.55) + '" mask="url(#' + m1 + ')"/>';
+    if (a.hl !== false) {
+      var h = a.hl || 0.6;
+      this.defs += '<mask id="' + m2 + '" maskUnits="userSpaceOnUse" ' + box + '><rect ' + box + ' fill="#fff"/><path d="' + d + '" fill="#000" transform="translate(' + (a.dx * h) + ' ' + (a.dy * h) + ')"/></mask>';
+      this.out += '<rect ' + box + ' fill="#fff5e0" opacity="' + (a.hlOp || 0.28) + '" mask="url(#' + m2 + ')"/>';
+    }
+  };
+
   /** 輪郭つきのかたまり（模様・おなか・陰は skin:true のときだけ） */
   Pen.prototype.part = function (d, fill, o) {
     o = o || {};
     var f = this.fillOf(fill || this.col.body);
     if (this.sil || !o.skin) {
-      this.out += '<path d="' + d + '" fill="' + f + '" stroke="' + (o.ol || OL) + '" stroke-width="' + (o.lw || LW) + '" stroke-linejoin="round" stroke-linecap="round"/>';
+      this.outline(d, o, f);
       return;
     }
     var cid = this.id + 'c' + (this.n++);
@@ -80,6 +186,8 @@
     if (o.belly) this.out += '<path d="' + o.belly + '" fill="' + (o.bellyFill || this.col.belly) + '"/>';
     if (o.pattern !== false) this.out += this.pattern;
     if (o.inner) this.out += o.inner;
+    if (o.auto && !this.noAuto) this.autoShade(d, o.auto);
+    else if (o.innerFlat) this.out += o.innerFlat;
     if (o.tex) {
       var tid = this.tex();
       this.out += '<rect x="-20" y="-20" width="240" height="190" fill="url(#' + tid + 'b)"/><rect x="-20" y="-20" width="240" height="190" fill="url(#' + tid + ')"/>';
@@ -87,7 +195,14 @@
     if (o.shade !== false) this.out += '<rect x="-20" y="-20" width="240" height="190" fill="url(#' + this.id + 'g)"/>';
     if (o.after) this.out += o.after;
     this.out += '</g>';
-    this.out += '<path d="' + d + '" fill="none" stroke="' + (o.ol || OL) + '" stroke-width="' + (o.lw || LW) + '" stroke-linejoin="round" stroke-linecap="round"/>';
+    this.outline(d, o);
+  };
+
+  /** 開いた線（しわ・まゆ など）。手描き風なら両端を細く抜く */
+  Pen.prototype.stroke = function (d, lw, color) {
+    if (this.sil) return;
+    var r = this.noInk ? null : inkStroke(d, lw, color);
+    this.out += r || '<path d="' + d + '" fill="none" stroke="' + color + '" stroke-width="' + lw + '" stroke-linecap="round" stroke-linejoin="round"/>';
   };
 
   /** うろこの模様（くり返しの柄）。id を返す */

@@ -55,4 +55,4 @@ node tools/sim.js 10000    # 回数を変える
 ## 公開のしかた（GitHub Pages・無料）
 - リポジトリは GitHub の組織 **TanukiBox**（TanukiBox/DINO-DUEL）。
 - Settings → Pages → Source を **Deploy from a branch**、Branch を **main** / **(root)**。main に push すると1〜2分で https://tanukibox.github.io/DINO-DUEL/ が更新される。
-- 更新がスマホに出ないときは、`index.html` の `?v=3` の数字を1つ上げる（css と js すべて）。
+- 更新がスマホに出ないときは、`index.html` の `?v=4` の数字を1つ上げる（css と js すべて）。
