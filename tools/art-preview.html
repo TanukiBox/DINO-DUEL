@@ -26,10 +26,10 @@
     // 1体だけ大きく（例：art-preview.html#tyranno）。下は描きこむ前の型の絵
     var d1 = DN.dino(one);
     g.style.gridTemplateColumns = '1fr 1fr';
-    g.insertAdjacentHTML('beforeend', '<div class="cell">' + DN.art.svg(d1) + '新しい描き方（手描き風の線＋自動の影）</div>');
-    g.insertAdjacentHTML('beforeend', '<div class="cell">' + DN.art.svg(d1, { noInk: true, noAuto: true }) + 'いまの描き方</div>');
-    g.insertAdjacentHTML('beforeend', '<div class="cell" style="width:190px">' + DN.art.svg(d1) + 'ゲームの大きさ（新）</div>');
-    g.insertAdjacentHTML('beforeend', '<div class="cell" style="width:190px">' + DN.art.svg(d1, { noInk: true, noAuto: true }) + 'ゲームの大きさ（いま）</div>');
+    g.insertAdjacentHTML('beforeend', '<div class="cell">' + DN.art.svg(d1) + '描きこみ版（手描き風の線＋自動の影）</div>');
+    g.insertAdjacentHTML('beforeend', '<div class="cell">' + DN.art.svg(d1, { noInk: true, noAuto: true }) + '線と影の加工なし</div>');
+    g.insertAdjacentHTML('beforeend', '<div class="cell" style="width:190px">' + DN.art.svg(d1) + 'ゲームの大きさ</div>');
+    g.insertAdjacentHTML('beforeend', '<div class="cell" style="width:190px">' + DN.art.svg(d1, { noInk: true, noAuto: true }) + 'ゲームの大きさ（加工なし）</div>');
   } else {
   DN.DINOS.forEach(function (d) {
     g.insertAdjacentHTML('beforeend', '<div class="cell">' + DN.art.svg(d) + d.name.ja + '（' + d.art.type + '）</div>');
