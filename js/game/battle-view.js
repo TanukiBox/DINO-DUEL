@@ -24,6 +24,7 @@
   var acting = false;
   var pendingTap = null;   // タイミング待ちのときだけ関数が入る
   var runId = 0;           // 途中でやめたとき、古い処理を止めるため
+  var chain = 0;           // 「ぴったり」の連続回数
 
   // ---------------- 場 ----------------
   function buildField() {
@@ -254,9 +255,13 @@
     var p = $('panel');
     p.innerHTML = '<div class="pad ' + kind + '" id="pad">' +
       (kind === 'wait' ? '' :
+        '<div class="pad-rays"></div>' +
         '<div class="pad-label">' + T(kind === 'atk' ? 'tapAtk' : 'tapDef') + '</div>' +
-        '<div class="ring-target">' + padIcon(kind) + '</div><div class="ring" id="ring"></div>' +
-        '<div class="pad-kind">' + T(kind) + '</div>') +
+        '<div class="ring-zone"></div>' +
+        '<div class="ring-target" id="ring-target">' + padIcon(kind) + '</div>' +
+        '<div class="ring echo" id="ring2"></div><div class="ring" id="ring"></div>' +
+        '<div class="pad-kind">' + T(kind) + '</div>' +
+        (chain >= 2 ? '<div class="chain">' + T('chain', { n: chain }) + '</div>' : '')) +
       '</div>';
   }
   function padIcon(kind) {
@@ -265,26 +270,68 @@
       : '<svg viewBox="0 0 40 40"><path d="M20 4 L34 9 C34 22 29 31 20 36 C11 31 6 22 6 9Z" fill="#2f9dff" stroke="#2b1b12" stroke-width="3" stroke-linejoin="round"/><path d="M20 10 L28 13 C28 21 25 27 20 30Z" fill="#bfe3ff"/></svg>';
   }
 
+  /** 判定の演出（輪がくだけて飛び散る・光・文字） */
+  function judgeFx(j, kind) {
+    var pad = $('pad');
+    if (!pad) return;
+    var r = pad.getBoundingClientRect(), cx = r.width / 2, cy = r.height * 0.52;
+    function add(cls, html) { var d = document.createElement('div'); d.className = cls; if (html) d.innerHTML = html; pad.appendChild(d); return d; }
+    var jd = add('judge ' + j);
+    jd.textContent = T(j);
+    if (j === 'miss') {
+      var ring = $('ring');
+      if (ring) { ring.style.opacity = '1'; ring.classList.add('dead'); }
+      pad.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-6px)' }, { transform: 'translateX(5px)' }, { transform: 'translateX(0)' }], { duration: 220 });
+      return;
+    }
+    var big = j === 'perfect';
+    add('burst' + (big ? ' big' : ''));
+    if (big) { add('burst big late'); add('pad-flash'); add('pad-rays hit'); }
+    // 輪のかけら
+    var n = big ? 14 : 8, col = big ? '#ffd23a' : (kind === 'atk' ? '#ff8a5a' : '#8accff');
+    for (var i = 0; i < n; i++) {
+      var a = (i / n) * Math.PI * 2 + Math.random() * 0.3, dist = (big ? 120 : 80) + Math.random() * 40;
+      var sh = add('shard');
+      sh.style.left = cx + 'px'; sh.style.top = cy + 'px';
+      sh.style.background = col;
+      sh.animate([
+        { transform: 'translate(-50%,-50%) rotate(' + (a * 57) + 'deg) translate(46px,0) scale(1)', opacity: 1 },
+        { transform: 'translate(-50%,-50%) rotate(' + (a * 57 + 40) + 'deg) translate(' + dist + 'px,0) scale(0.4)', opacity: 0 }
+      ], { duration: 520, easing: 'cubic-bezier(.1,.8,.3,1)', fill: 'forwards' });
+    }
+    pad.animate([{ transform: 'scale(1)' }, { transform: 'scale(' + (big ? 1.04 : 1.02) + ')' }, { transform: 'translate(-4px,2px) scale(1)' }, { transform: 'translate(3px,-2px)' }, { transform: 'none' }],
+      { duration: big ? 320 : 220, easing: 'ease-out' });
+    if (big && chain >= 2) {
+      var ch = add('chain pop');
+      ch.textContent = T('chain', { n: chain });
+    }
+  }
+
   /** 輪を縮めて、タップの判定を返す（'perfect' | 'good' | 'miss'） */
   function timingRing(kind, t0, tHit, minis) {
     return new Promise(function (resolve) {
-      var ring = $('ring'), done = false;
+      var ring = $('ring'), echo = $('ring2'), tgt = $('ring-target'), pad = $('pad'), done = false;
+      // リズムの合図：当たる瞬間の前に3回「ピッ」（だんだん高く）
+      var ticks = [3, 2, 1].map(function (k) {
+        return setTimeout(function () {
+          if (done) return;
+          DN.app.sfx.tick(4 - k);
+          if (tgt) tgt.animate([{ transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 160, easing: 'ease-out' });
+        }, Math.max(0, tHit - performance.now() - k * 190));
+      });
       function finish(j) {
         if (done) return;
         done = true;
         pendingTap = null;
+        ticks.forEach(clearTimeout);
         if (ring) ring.style.opacity = '0';
+        if (echo) echo.style.opacity = '0';
+        if (pad) pad.classList.remove('hot');
         minis.forEach(function (m) { m.remove(); });
-        var pad = $('pad');
-        if (pad) {
-          var jd = document.createElement('div');
-          jd.className = 'judge ' + j;
-          jd.textContent = T(j);
-          pad.appendChild(jd);
-          if (j !== 'miss') { var bu = document.createElement('div'); bu.className = 'burst'; pad.appendChild(bu); }
-        }
-        if (j === 'perfect') { DN.app.sfx.perfect(); fx('flash gold'); }
-        else if (j === 'good') DN.app.sfx.good();
+        chain = j === 'perfect' ? chain + 1 : 0;
+        judgeFx(j, kind);
+        if (j === 'perfect') { DN.app.sfx.perfect(); DN.app.sfx.shatter(); fx('flash gold'); }
+        else if (j === 'good') { DN.app.sfx.good(); DN.app.sfx.shatter(true); }
         else DN.app.sfx.miss();
         resolve(j);
       }
@@ -301,13 +348,31 @@
         var s = CFG.RING_START - (CFG.RING_START - 1) * p;
         if (ring) {
           ring.style.transform = 'scale(' + Math.max(0.5, s).toFixed(3) + ')';
-          ring.style.opacity = p > 1 ? String(Math.max(0, 1 - (p - 1) * 4)) : '1';
+          ring.style.opacity = p > 1 ? String(Math.max(0, 1 - (p - 1) * 4)) : String(Math.min(1, 0.35 + p));
+          ring.style.borderWidth = (6 + 6 * Math.min(1, p)).toFixed(1) + 'px';
         }
+        if (echo) {
+          var s2 = CFG.RING_START - (CFG.RING_START - 1) * Math.max(0, p - 0.12);
+          echo.style.transform = 'scale(' + Math.max(0.5, s2).toFixed(3) + ')';
+          echo.style.opacity = p > 1 ? '0' : '0.35';
+        }
+        if (pad) pad.classList.toggle('hot', Math.abs(now - tHit) <= CFG.GOOD_MS);
         minis.forEach(function (m) { m.style.transform = 'scale(' + Math.max(0.5, 1 + (s - 1) * 0.45).toFixed(3) + ')'; });
         if (now > tHit + CFG.GOOD_MS) { finish('miss'); return; }
         requestAnimationFrame(loop);
       })();
     });
+  }
+
+  /** タップした場所に波紋 */
+  function ripple(pos) {
+    if (!pos || pos.x === null || pos.x === undefined) return;
+    var d = document.createElement('div');
+    d.className = 'tap-ripple';
+    d.style.left = pos.x + 'px';
+    d.style.top = pos.y + 'px';
+    $('app').appendChild(d);
+    setTimeout(function () { d.remove(); }, 500);
   }
 
   function untilTime(t) {
@@ -472,6 +537,7 @@
     lv = CFG.AI_LEVELS[o.level || 0];
     st = B.create(o.team, o.foes, { b: { statMul: lv.statMul } });
     pendingTap = null;
+    chain = 0;
     buildField();
     newTurn();
   };
@@ -482,8 +548,10 @@
     $('tapzone').classList.remove('on');
   };
   /** タップ・クリック・スペースキー（共通土台の片手操作から呼ばれる） */
-  V.press = function () {
-    if (pendingTap) pendingTap(performance.now());
+  V.press = function (pos) {
+    if (!pendingTap) return;
+    ripple(pos);
+    pendingTap(performance.now());
   };
   V.state = function () { return st; };
   /** 確認用：1体の技を1回だけ動かす（例：DN.BattleView.demo(0, 0)） */

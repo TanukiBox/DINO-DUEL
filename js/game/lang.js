@@ -70,6 +70,7 @@
       sticker_gust: 'ビュオォッ！', sticker_splash: 'ザバァッ！', sticker_press: 'ドッシーン！', sticker_stab: 'グサッ！',
       ready: 'OK!',
       powLabel: '威力',
+      chain: 'ぴったり ×{n} 連続！',
       rarity: 'レア度',
       era_triassic: '三畳紀', era_jurassic: 'ジュラ紀', era_cretaceous: '白亜紀',
       clan_carnivore: '肉食', clan_herbivore: '草食', clan_skysea: '空と海'
@@ -137,6 +138,7 @@
       sticker_gust: 'WHOOSH!', sticker_splash: 'SPLASH!', sticker_press: 'SLAM!', sticker_stab: 'STAB!',
       ready: 'OK!',
       powLabel: 'POW',
+      chain: 'PERFECT ×{n} CHAIN!',
       rarity: 'Rarity',
       era_triassic: 'Triassic', era_jurassic: 'Jurassic', era_cretaceous: 'Cretaceous',
       clan_carnivore: 'Carnivore', clan_herbivore: 'Herbivore', clan_skysea: 'Sky & Sea'

@@ -108,6 +108,13 @@
       wind: function () { S.noise({ dur: 0.6, vol: 0.14, f0: 400, f1: 1800, q: 2.5 }); },
       dive: function () { S.noise({ dur: 0.3, vol: 0.18, f0: 3000, f1: 700, q: 2 }); S.tone({ type: 'sine', f0: 1600, f1: 400, dur: 0.3, vol: 0.06 }); },
       splash: function () { S.noise({ dur: 0.5, vol: 0.22, f0: 2500, f1: 400, q: 0.7 }); S.noise({ dur: 0.3, vol: 0.1, f0: 5000, f1: 3000, q: 2, delay: 0.1 }); },
+      /** タイミングの合図（n = 1, 2, 3 でだんだん高く） */
+      tick: function (n) { S.tone({ type: 'square', f0: 660 + n * 220, f1: 660 + n * 220, dur: 0.05, vol: 0.07 }); },
+      /** 輪がくだける */
+      shatter: function (small) {
+        S.noise({ dur: small ? 0.2 : 0.35, vol: small ? 0.12 : 0.2, f0: 7000, f1: 2500, q: 1.2 });
+        S.tone({ type: 'triangle', f0: small ? 1800 : 2600, f1: small ? 900 : 1200, dur: 0.25, vol: 0.06 });
+      },
       /** ボタンを押した（強め） */
       press: function () {
         S.tone({ type: 'square', f0: 520, f1: 1040, dur: 0.07, vol: 0.09 });

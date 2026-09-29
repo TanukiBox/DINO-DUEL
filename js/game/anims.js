@@ -250,6 +250,9 @@
     c.dir = c.mine ? 1 : -1;
     c.s = o.slot(o.u);
     c.ringMs = o.tHit - o.t0;
+    // あごの角度（絵ごとに違う。art-tyranno.js の rig）
+    var cu = DN.ART_CUSTOM && DN.ART_CUSTOM[o.u.id];
+    c.R = (cu && cu.rig) || { jawOpen: 30, jawClose: -3 };
     c.part = function (name) { return c.s.svg ? c.s.svg.querySelector('.' + name) : null; };
     /** 恐竜の絵の中の位置（fx, fy = 右向きの絵での割合）→ 場の中の位置 */
     c.pt = function (unit, fx, fy) {
@@ -315,7 +318,7 @@
 
   function backHome(c, dur) {
     c.rot('p-head', [0], dur);
-    c.rot('p-jaw', [5], dur);
+    c.rot('p-jaw', [0], dur);
     c.rot('p-tail', [0], dur);
     c.move([c.cur, 'translate(0px,0px)'], dur || 300, 'cubic-bezier(.3,.7,.4,1)');
     return wait(dur || 300);
@@ -341,7 +344,7 @@
       var ring = c.ringMs;
       c.move([c.cur, c.T(-0.08, 5, 0.95, -6)], ring * 0.55, 'cubic-bezier(.2,.8,.3,1)');
       c.rot('p-head', [0, -16], ring * 0.55);
-      c.rot('p-jaw', [5, 34], ring * 0.6, 'cubic-bezier(.3,.6,.3,1)');
+      c.rot('p-jaw', [0, c.R.jawOpen], ring * 0.6, 'cubic-bezier(.3,.6,.3,1)');
       c.rot('p-tail', [0, 8], ring * 0.55);
       setTimeout(function () { sfx().growl(); c.glow('#ff3a1a', 700); FX.vignette('rgba(255,30,10,0.5)', 700); }, ring * 0.25);
     },
@@ -354,7 +357,7 @@
       FX.speedLines(c.mine ? 0 : 180, 420);
     },
     impact: function (c, t, hit, h) {
-      c.rot('p-jaw', [34, -3], 70, 'ease-in');
+      c.rot('p-jaw', [c.R.jawOpen, c.R.jawClose], 70, 'ease-in');
       var p = c.center(t);
       sfx().crunch();
       FX.bite(p.x, p.y, 1.2, true);
@@ -380,7 +383,7 @@
       var ring = c.ringMs;
       c.move([c.cur, c.T(-0.06, 2, 1.02, -9)], ring * 0.35, 'cubic-bezier(.2,.8,.3,1)');
       c.rot('p-head', [0, -26], ring * 0.35, 'cubic-bezier(.2,.8,.3,1)');
-      c.rot('p-jaw', [5, 38], ring * 0.3, 'cubic-bezier(.2,.8,.3,1)');
+      c.rot('p-jaw', [0, c.R.jawOpen + 6], ring * 0.3, 'cubic-bezier(.2,.8,.3,1)');
       c.rot('p-tail', [0, 12], ring * 0.4);
       setTimeout(function () {
         sfx().roarBig();
@@ -405,7 +408,7 @@
     strike: function (c) {
       sfx().swing();
       c.rot('p-head', [-26, 12], 200);
-      c.rot('p-jaw', [38, 12], 200);
+      c.rot('p-jaw', [c.R.jawOpen + 6, 0], 200);
       c.move([c.cur, c.T(0.6, 0, 1.1, 6)], 200, 'cubic-bezier(.7,0,.9,.4)');
       c.ghosts(3, 50, 0.35);
     },
@@ -420,7 +423,7 @@
     after: function (c) {
       c.move([c.cur, c.T(0.3, 0, 1.04, -6)], 260, 'ease-out');
       c.rot('p-head', [12, -18, 0], 520);
-      c.rot('p-jaw', [12, 30, 5], 520);
+      c.rot('p-jaw', [0, c.R.jawOpen, 0], 520);
       c.glow('#ff3a1a', 600);
       return wait(300);
     }
@@ -432,12 +435,12 @@
     strike: function (c) {
       sfx().swing();
       c.move([c.cur, c.T(0.7, 0, 1.08, 6)], 200, 'cubic-bezier(.7,0,.9,.4)');
-      c.rot('p-jaw', [5, 30], 150);
+      c.rot('p-jaw', [0, c.R.jawOpen], 150);
       c.ghosts(2, 60);
     },
     impact: function (c, t) {
       var p = c.center(t);
-      c.rot('p-jaw', [30, 0], 70);
+      c.rot('p-jaw', [c.R.jawOpen, c.R.jawClose], 70);
       sfx().crunch();
       FX.bite(p.x, p.y, 0.9);
       FX.sticker(T('sticker_bite'), p.x, p.y - 34);

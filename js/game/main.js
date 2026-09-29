@@ -81,7 +81,10 @@
 
   // タイミングのタップ：画面のどこを押しても（PC はクリック・スペースキーでも）
   var input = TB.createInput($('tapzone'));
-  input.onPress = function () { DN.BattleView.press(); };
+  input.onPress = function (e) {
+    var r = $('app').getBoundingClientRect(), z = $('tapzone').getBoundingClientRect();
+    DN.BattleView.press(e && e.x !== null ? { x: e.x + z.left - r.left, y: e.y + z.top - r.top } : null);
+  };
 
   buildTitle();
   show('title');

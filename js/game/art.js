@@ -70,7 +70,7 @@
     o = o || {};
     var f = this.fillOf(fill || this.col.body);
     if (this.sil || !o.skin) {
-      this.out += '<path d="' + d + '" fill="' + f + '" stroke="' + OL + '" stroke-width="' + (o.lw || LW) + '" stroke-linejoin="round" stroke-linecap="round"/>';
+      this.out += '<path d="' + d + '" fill="' + f + '" stroke="' + (o.ol || OL) + '" stroke-width="' + (o.lw || LW) + '" stroke-linejoin="round" stroke-linecap="round"/>';
       return;
     }
     var cid = this.id + 'c' + (this.n++);
@@ -87,7 +87,7 @@
     if (o.shade !== false) this.out += '<rect x="-20" y="-20" width="240" height="190" fill="url(#' + this.id + 'g)"/>';
     if (o.after) this.out += o.after;
     this.out += '</g>';
-    this.out += '<path d="' + d + '" fill="none" stroke="' + OL + '" stroke-width="' + (o.lw || LW) + '" stroke-linejoin="round" stroke-linecap="round"/>';
+    this.out += '<path d="' + d + '" fill="none" stroke="' + (o.ol || OL) + '" stroke-width="' + (o.lw || LW) + '" stroke-linejoin="round" stroke-linecap="round"/>';
   };
 
   /** うろこの模様（くり返しの柄）。id を返す */
