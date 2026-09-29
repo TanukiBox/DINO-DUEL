@@ -529,6 +529,7 @@
     acting = true;
     pendingTap = null;
     $('tapzone').classList.remove('on');
+    DN.app.bgm.stop(0.6);
     if (won) DN.app.sfx.victory(); else DN.app.sfx.defeat();
     splash(T(won ? 'win' : 'lose'));
     var turns = st.turn, id = runId;

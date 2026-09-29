@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DINO DUEL BGM 試聴</title>
+<!-- BGM を1曲ずつ聞くページ（確認用。ゲームには出ない）。曲は js/game/bgm.js -->
+<style>
+  body { margin: 0; padding: 16px; background: #141a30; color: #fff; font: 15px/1.5 sans-serif; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  p { margin: 0 0 12px; color: #cfd7ff; font-size: 13px; }
+  .list { display: grid; gap: 8px; max-width: 520px; }
+  button.t { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; padding: 10px 14px; border-radius: 12px; border: 2px solid #0b0f1e; background: #2a3466; color: #fff; font: inherit; text-align: left; cursor: pointer; }
+  button.t b { font-size: 16px; }
+  button.t small { color: #cfd7ff; font-size: 12px; }
+  button.t.on { background: #ffd23a; color: #2b1b12; }
+  button.t.on small { color: #5a3a12; }
+  .stop { margin: 12px 0; padding: 10px 20px; border-radius: 999px; border: 2px solid #0b0f1e; background: #e5383b; color: #fff; font: inherit; }
+</style>
+</head>
+<body>
+<h1>DINO DUEL BGM 試聴</h1>
+<p>押すと流れます（同じボタンでもう一度頭から）。音はすべてブラウザの中で作っています。</p>
+<button class="stop" id="stop">止める</button>
+<div class="list" id="list"></div>
+<script src="../js/common/tb-store.js"></script>
+<script src="../js/common/tb-sound.js"></script>
+<script src="../js/game/bgm.js"></script>
+<script>
+  var sound = TB.createSound(null), bgm = DN.createBgm(sound, null);
+  var LIST = [
+    ['title', 'タイトル「恐竜の大地」', 'ニ短調・太鼓とラッパの勇ましい曲'],
+    ['home', 'ホーム「キャンプの朝」', 'ヘ長調・木琴と笛ののんびりした曲'],
+    ['tour', '大会をえらぶ「大会への道」', 'ト長調・行進曲'],
+    ['collect', 'チーム・図鑑「化石の図鑑」', 'イ短調・オルゴール'],
+    ['shop', 'カードパック「パック・アーケード」', 'ハ長調・ピコピコのゲームセンター'],
+    ['battle', 'バトル「牙と牙」', 'ビギナー・ノービス／ホ短調・速いロック'],
+    ['battle2', 'バトル「大地を揺らせ」', 'アドバンス／ニ短調・太鼓の重い曲'],
+    ['final', '決勝「決勝のゴング」', '大会の最後の試合／イ短調・いちばん熱い曲'],
+    ['boss', 'バトル「覇者の咆哮」', 'マスター・レジェンド／ハ短調・速くて重い曲'],
+    ['win', '勝ち（短い曲）', '→ 結果の曲へつづく'],
+    ['champion', '優勝（短い曲）', '→ 結果の曲へつづく'],
+    ['lose', '負け（短い曲）', '→ 結果の曲へつづく'],
+    ['result', '試合の結果「つぎの一歩」', 'ハ長調・明るくやさしい曲']
+  ];
+  var list = document.getElementById('list');
+  LIST.forEach(function (x) {
+    var tr = DN.BGM_TRACKS[x[0]], sec = tr.len / 4 * 60 / tr.bpm;
+    var b = document.createElement('button');
+    b.className = 't'; b.dataset.id = x[0];
+    b.innerHTML = '<b>' + x[1] + '</b><small>' + x[2] + '（' + tr.bpm + ' BPM・' + sec.toFixed(0) + '秒' + (tr.loop === false ? '' : 'でくり返し') + '）</small>';
+    b.addEventListener('click', function () { bgm.play(x[0], true); mark(); });
+    list.appendChild(b);
+  });
+  function mark() { var p = bgm.playing; list.querySelectorAll('.t').forEach(function (b) { b.classList.toggle('on', b.dataset.id === p); }); }
+  setInterval(mark, 300);
+  document.getElementById('stop').addEventListener('click', function () { bgm.stop(0.3); });
+</script>
+</body>
+</html>

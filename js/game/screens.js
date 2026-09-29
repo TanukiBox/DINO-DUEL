@@ -51,10 +51,12 @@
         '<button class="tile t-team" data-go="team">' + ICON.team + '<b>' + T('menuTeam') + '</b><small>' + T('menuTeamSub') + '</small></button>' +
         '<button class="tile t-dex" data-go="dex">' + ICON.dex + '<b>' + T('menuDex') + '</b><small>' + owned + ' / ' + DN.DINOS.length + '</small></button>' +
         '<div class="home-foot"><button class="btn small" id="h-title">' + T('toTitle') + '</button>' +
-        '<button class="btn small" id="h-snd">' + T(DN.app.sound.muted ? 'soundOff' : 'soundOn') + '</button></div>' +
+        '<span class="h-snd"><button class="btn small" id="h-snd">' + T(DN.app.sound.muted ? 'soundOff' : 'soundOn') + '</button>' +
+        '<button class="btn small" id="h-bgm">' + T(DN.app.bgm.on ? 'bgmOn' : 'bgmOff') + '</button></span></div>' +
       '</div>';
     on(el, '[data-go]', function (b) { DN.app.go(b.dataset.go); });
     on(el, '#h-snd', function (b) { DN.app.sound.toggle(); b.textContent = T(DN.app.sound.muted ? 'soundOff' : 'soundOn'); });
+    on(el, '#h-bgm', function (b) { DN.app.bgm.toggle(); b.textContent = T(DN.app.bgm.on ? 'bgmOn' : 'bgmOff'); });
     on(el, '#h-title', function () { DN.app.go('title'); });
   };
 
@@ -147,7 +149,6 @@
           '<button class="btn big" id="rs-retry">' + T('retryRun') + '</button>' +
           '<div class="row-btns"><button class="btn" id="rs-tour">' + T('chooseTour') + '</button><button class="btn" id="rs-shop">' + T('menuShop') + '</button></div>') +
       '</div>';
-    if (r.champion) { DN.app.sfx.victory(); setTimeout(function () { DN.app.sfx.victory(); }, 900); }
     // 経験値のバーをのばす。レベルが上がる恐竜は、いっぱいまでのびたら光って「LEVEL UP!」→ 新しいレベルのバーをのばしなおす
     el.querySelectorAll('.xp-row').forEach(function (row, k) {
       var bar = row.querySelector('.xr-bar i'), to = bar.dataset.to + '%', up = row.classList.contains('up');

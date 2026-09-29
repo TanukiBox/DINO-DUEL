@@ -52,6 +52,7 @@ URL の最後に `?debug=1`（例：https://tanukibox.github.io/DINO-DUEL/?debug
 | `js/game/art-theropods.js` / `art-herbivores.js` / `art-skysea.js` | 残り31種の絵（体型ごとの描き方に、種ごとの頭・色・模様・トゲなどを指定） |
 | `js/game/anims.js` | 技ごとの攻撃アニメーションと演出の部品 |
 | `js/game/sfx.js` | 効果音（カード排出・筐体の回転なども） |
+| `js/game/bgm.js` | BGM（オリジナル13曲。楽譜を文字で書き、ブラウザの中で演奏する。場面・大会の強さ・決勝で曲が変わる） |
 | `js/game/lang.js` | 画面の文字（日本語・英語） |
 | `js/game/share.js` | X シェア（大会優勝・EX 獲得） |
 | `js/game/main.js` | 起動・画面の切りかえ・セーブ・デバッグモード |
@@ -59,6 +60,8 @@ URL の最後に `?debug=1`（例：https://tanukibox.github.io/DINO-DUEL/?debug
 | `tools/art-preview.html` | 全恐竜の絵を並べて確認するページ（`#detail`、`#tyranno` などで1体だけ大きく） |
 | `tools/screens.html` | スマホの大きさでゲームの画面を並べて確認するページ（デバッグ用のセーブを使う） |
 | `tools/promo.html` | 紹介画像・アイコンを作るページ |
+| `tools/bgm.html` | BGM を1曲ずつ聞くページ |
+| `tools/bgm-check.js` | BGM の楽譜の確認（`node tools/bgm-check.js`：小節がずれていないか・音名・和音の外の音） |
 | `tools/serve.py` | キャッシュしない確認用サーバー |
 
 ## バランス確認
@@ -80,5 +83,5 @@ node tools/sim.js growth    # 3. マスター・レジェンドに勝つのに�
 ## 公開のしかた（GitHub Pages・無料）
 - リポジトリは GitHub の組織 **TanukiBox**（TanukiBox/DINO-DUEL）。
 - Settings → Pages → Source を **Deploy from a branch**、Branch を **main** / **(root)**。main に push すると1〜2分で https://tanukibox.github.io/DINO-DUEL/ が更新される。
-- 更新がスマホに出ないときは、`index.html` の `?v=10` の数字を1つ上げる（css と js すべて）。
+- 更新がスマホに出ないときは、`index.html` の `?v=11` の数字を1つ上げる（css と js すべて）。
 - Tanuki Box のトップページ（TanukiBox/tanukibox.github.io）の `games.js` に DINO DUEL の箱を追加済み。絵は `assets/games/dino-duel*.png / .jpg`。

@@ -17,6 +17,7 @@
   var i18n = TB.createI18n(DN.TEXT, 'en');
   var sound = TB.createSound(TB.createStore('dino-duel'));   // 音のオンオフは共通
   var sfx = DN.createSfx(sound);
+  var bgm = DN.createBgm(sound, TB.createStore('dino-duel'));   // BGM のオンオフも共通
   document.documentElement.lang = i18n.lang;
   document.title = 'DINO DUEL' + (i18n.lang === 'ja' ? '／恐竜カードバトル' : ' — Dino Card Battle');
 
@@ -31,7 +32,7 @@
   save();
 
   var app = DN.app = {
-    store: store, i18n: i18n, sound: sound, sfx: sfx, debug: debug,
+    store: store, i18n: i18n, sound: sound, sfx: sfx, bgm: bgm, debug: debug,
     get state() { return state; },
     save: save,
     returnTo: 'home'
@@ -45,6 +46,7 @@
   app.go = function (name, args) {
     if (DN.closeOverlay) DN.closeOverlay();
     DN.BattleView.stop();
+    bgm.forScreen(name);
     if (name === 'title') { buildTitle(); show('title'); return; }
     if (name !== 'team') app.returnTo = name;
     DN.Screens[name](args);
@@ -59,6 +61,7 @@
     s.team.forEach(function (id) { before[id] = { lv: s.owned[id].lv, xp: s.owned[id].xp }; });
     var t = run.t, matchNo = run.m + 1;
     show('battle');
+    bgm.forBattle(t, matchNo === TT.matches.length);   // 大会の強さ・決勝で曲が変わる
     DN.BattleView.start({
       team: DN.Progress.teamSpecs(s),
       foes: DN.Progress.opponent(s),
@@ -67,6 +70,7 @@
       onEnd: function (won, turns) {
         var r = DN.Progress.finishMatch(s, won);
         save();
+        bgm.play(r.champion ? 'champion' : won ? 'win' : 'lose', true);   // 短い曲のあと、結果の曲へ
         DN.Screens.result(r, before, t, turns);
         show('result');
       }
@@ -79,10 +83,12 @@
     t.querySelectorAll('[data-t]').forEach(function (e) { e.textContent = i18n.t(e.dataset.t); });
     $('t-dinos').innerHTML = state.team.map(function (id) { return '<div>' + DN.art.img(DN.dino(id)) + '</div>'; }).join('');
     $('btn-sound').textContent = i18n.t(sound.muted ? 'soundOff' : 'soundOn');
+    $('btn-bgm').textContent = i18n.t(bgm.on ? 'bgmOn' : 'bgmOff');
     $('t-debug').style.display = debug ? '' : 'none';
   }
   $('btn-start').addEventListener('click', function () { sfx.go(); app.go('home'); });
   $('btn-sound').addEventListener('click', function () { sound.toggle(); sfx.tap(); $('btn-sound').textContent = i18n.t(sound.muted ? 'soundOff' : 'soundOn'); });
+  $('btn-bgm').addEventListener('click', function () { bgm.toggle(); sfx.tap(); $('btn-bgm').textContent = i18n.t(bgm.on ? 'bgmOn' : 'bgmOff'); });
 
   // タイミングのタップ：画面のどこを押しても（PC はクリック・スペースキーでも）
   var input = TB.createInput($('tapzone'));
@@ -104,4 +110,5 @@
 
   buildTitle();
   show('title');
+  bgm.play('title');   // 音は最初に画面をさわったときから鳴る（スマホのきまり）
 })(window);

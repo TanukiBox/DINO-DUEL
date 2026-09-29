@@ -234,6 +234,7 @@
         '<div class="rv-burst">' + burst + '</div>' +
         label +
       '</div>', buttons);
+    if (rank >= 3) DN.app.bgm.duck(rank >= 4 ? 3.5 : 2.5);   // 大当たりの音を聞かせるため、BGM を少し小さく
     if (rank >= 4) { DN.app.sfx.victory(); setTimeout(function () { DN.app.sfx.roarBig(); }, 300); }
     else if (rank >= 3) DN.app.sfx.victory();
     else if (rank >= 2) DN.app.sfx.perfect();
