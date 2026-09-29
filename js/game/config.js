@@ -1,0 +1,60 @@
+/*
+ * DINO DUEL 調整用の数値
+ * バトルの手ざわり・強さのつり合いは、ほぼここの数字で決まる。
+ * tools/sim.js（バランス確認用シミュレーション）も同じ数字を読む。
+ */
+(function (global) {
+  'use strict';
+  var DN = global.DN = global.DN || {};
+
+  DN.CFG = {
+    SHARE_URL: 'https://tanukibox.github.io/DINO-DUEL/',
+
+    // ---- ダメージ ----
+    // ダメージ = 威力 × (攻撃力 ÷ 相手の防御力) × DMG_K × 乱数 × クリティカル × タイミング倍率
+    DMG_K: 0.72,
+    RAND_MIN: 0.9,
+    RAND_MAX: 1.1,
+    CRIT_MUL: 1.5,
+    DEX_MIN: 5,               // 器用さ＝クリティカル率（%）の範囲
+    DEX_MAX: 40,
+
+    // ---- タイミング ----
+    ATK_TIMING: { perfect: 1.5, good: 1.2, miss: 1.0 }, // 自分の攻撃：ぴったり／おしい／外れ
+    DEF_TIMING: { perfect: 0.6, good: 0.8, miss: 1.0 }, // 相手の攻撃：受けるダメージ
+    PERFECT_MS: 85,           // 当たる瞬間から ±この時間（ミリ秒）なら「ぴったり」
+    GOOD_MS: 200,             // ±この時間なら「おしい」
+    RING_SEC: 1.05,           // 輪が縮みきるまでの時間（秒）
+    RING_START: 3.2,          // 輪の大きさ（はじめ）＝的の何倍か
+
+    // ---- 技の効果 ----
+    FX: {
+      atkUp: 0.25,            // 攻撃アップ：1段ごとに +25%
+      defDown: 0.2,           // 防御ダウン：1段ごとに -20%
+      spdDown: 0.3,           // 素早さダウン：1段ごとに -30%
+      stageMax: 2,            // 上げ下げは2段まで
+      drain: 0.5,             // 回復：与えたダメージの50%
+      recoil: 0.25            // 反動：与えたダメージの25%
+    },
+
+    // ---- 相手AIのうまさ（大会ごと）----
+    // atk / def：AI がタイミングを「ぴったり」「おしい」にする確率。残りは「外れ」
+    // statMul：相手の強さ（ステータスの倍率。段階2で大会の敵チームに置きかえる）
+    AI_LEVELS: [
+      { key: 'beginner', atk: { perfect: 0.05, good: 0.20 }, def: { perfect: 0.03, good: 0.15 }, statMul: 0.85 },
+      { key: 'novice',   atk: { perfect: 0.12, good: 0.30 }, def: { perfect: 0.08, good: 0.25 }, statMul: 0.95 },
+      { key: 'advance',  atk: { perfect: 0.22, good: 0.38 }, def: { perfect: 0.15, good: 0.32 }, statMul: 1.05 },
+      { key: 'master',   atk: { perfect: 0.38, good: 0.40 }, def: { perfect: 0.28, good: 0.40 }, statMul: 1.35 },
+      { key: 'legend',   atk: { perfect: 0.55, good: 0.35 }, def: { perfect: 0.45, good: 0.38 }, statMul: 1.7 }
+    ],
+
+    // ---- 演出の速さ（秒）----
+    ANIM: {
+      banner: 0.55,           // 技名を見せる時間
+      lunge: 0.16,            // 飛びかかる時間
+      back: 0.28,             // 元の位置に戻る時間
+      between: 0.22,          // 次の恐竜が動くまでの間
+      hitStop: 0.07           // 当たった瞬間に止まる時間
+    }
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
