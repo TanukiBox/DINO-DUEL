@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>DINO DUEL 画面の確認</title>
+<!--
+  スマホの大きさ（390×780）で、ゲームの画面をならべて見るページ（確認用。ゲームには出ない）。
+    ?lang=ja|en   … 言語
+    ?s=home,tour  … ならべる画面（title / home / tour / team / dex / shop / battle / result / reveal / ex）
+  デバッグ用のセーブ（?debug=1）で開くので、ふつうのセーブは変わらない。
+-->
+<style>
+  body { margin: 0; padding: 10px; background: #333; display: flex; flex-wrap: wrap; gap: 10px; font: 14px sans-serif; color: #fff; }
+  figure { margin: 0; }
+  figcaption { padding: 2px 0 4px; }
+  iframe { width: 390px; height: 780px; border: 0; background: #000; display: block; }
+</style>
+</head>
+<body>
+<script>
+  var q = new URLSearchParams(location.search), lang = q.get('lang') || 'ja';
+  var list = (q.get('s') || 'title,home,tour,team,dex,shop').split(',');
+  list.forEach(function (name) {
+    var f = document.createElement('figure');
+    f.innerHTML = '<figcaption>' + name + '</figcaption><iframe src="../index.html?debug=1&lang=' + lang + '"></iframe>';
+    document.body.appendChild(f);
+    var fr = f.querySelector('iframe');
+    fr.addEventListener('load', function () {
+      var w = fr.contentWindow, DN = w.DN, app = DN.app, s = app.state;
+      if (name === 'battle') { DN.Progress.startRun(s, 2); app.startMatch(); return; }
+      if (name === 'combo') { s.team = ['leviawing', 'mosa', 'quetzal']; DN.Progress.startRun(s, 2); app.startMatch(); return; }  // コンボ発動の演出
+      if (name === 'result') {   // 大会で優勝して、1体目と2体目がレベルアップしたところ
+        DN.Progress.startRun(s, 0); s.run.m = DN.TOURNAMENTS[0].matches.length - 1;
+        s.owned[s.team[0]].xp = 50; s.owned[s.team[1]].xp = 30;
+        var before = {}; s.team.forEach(function (id) { before[id] = { lv: s.owned[id].lv, xp: s.owned[id].xp }; });
+        var r = DN.Progress.finishMatch(s, true);
+        app.go('home'); DN.Screens.result(r, before, 0, 4);
+        w.document.querySelectorAll('.screen').forEach(function (x) { x.classList.toggle('active', x.id === 'scr-result'); });
+        return;
+      }
+      if (name === 'ex') {   // EX を引いたところ（1回だけ必ず EX が出るようにする）
+        var draw = DN.Progress.draw;
+        DN.Progress.draw = function () { DN.Progress.draw = draw; return 'tyranoceras'; };
+        delete s.owned.tyranoceras;
+        s.packs.win_legend = 1; app.go('shop', { open: 'win_legend' }); return;
+      }
+      if (name === 'reveal') { s.packs.win_legend = 1; app.go('shop', { open: 'win_legend' }); return; }
+      if (name !== 'title') app.go(name);
+    });
+  });
+</script>
+</body>
+</html>

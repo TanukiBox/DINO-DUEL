@@ -91,6 +91,17 @@
     DN.BattleView.press(e && e.x !== null ? { x: e.x + z.left - r.left, y: e.y + z.top - r.top } : null);
   };
 
+  // 絵は、はじめて使うときに作ると少し時間がかかるので、タイトルが出たあとの空き時間に1体ずつ用意しておく
+  var idle = global.requestIdleCallback || function (f) { return setTimeout(f, 40); };
+  var warmList = DN.Progress.ownedIds(state).concat(DN.DINOS.map(function (d) { return d.id; }));
+  function warm(i) {
+    if (i >= warmList.length) return;
+    var d = DN.dino(warmList[i]);
+    DN.art.url(d); DN.art.url(d, { crop: true }); if (!state.owned[d.id]) DN.art.url(d, { silhouette: true });
+    idle(function () { warm(i + 1); });
+  }
+  setTimeout(function () { warm(0); }, 600);
+
   buildTitle();
   show('title');
 })(window);

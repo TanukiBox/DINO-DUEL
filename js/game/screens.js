@@ -113,13 +113,14 @@
   S.result = function (r, before, t, turns) {
     var s = st(), el = $('scr-result'), TT = DN.TOURNAMENTS[t];
     var head = r.champion ? T('champion', { name: T('tourName', { name: T('lv_' + TT.key) }) }) : r.won ? T('win') : T('lose');
+    function pct(lv, xp) { return lv >= DN.CFG.LV_MAX ? 100 : Math.round(xp / DN.Progress.xpNext(lv) * 100); }
     var rows = s.team.map(function (id) {
-      var o = s.owned[id], b = before[id], d = DN.dino(id), next = DN.Progress.xpNext(o.lv);
+      var o = s.owned[id], b = before[id], d = DN.dino(id);
       var up = r.levelUps[id] || 0;
       return '<div class="xp-row' + (up ? ' up' : '') + '"><span class="xr-ic">' + DN.art.img(d, { crop: true }) + '</span>' +
         '<span class="xr-name">' + esc(L(d.name)) + '</span>' +
         '<span class="xr-lv">Lv <b>' + b.lv + (up ? ' → ' + o.lv : '') + '</b></span>' +
-        '<span class="xr-bar"><i style="width:' + (o.lv >= DN.CFG.LV_MAX ? 100 : o.xp / next * 100).toFixed(0) + '%"></i></span>' +
+        '<span class="xr-bar"><i style="width:' + pct(b.lv, b.xp) + '%" data-to="' + pct(o.lv, o.xp) + '"></i></span>' +
         (up ? '<span class="lvup">LEVEL UP!</span>' : '') + '</div>';
     }).join('');
     el.innerHTML =
@@ -143,9 +144,17 @@
           '<div class="row-btns"><button class="btn" id="rs-tour">' + T('chooseTour') + '</button><button class="btn" id="rs-shop">' + T('menuShop') + '</button></div>') +
       '</div>';
     if (r.champion) { DN.app.sfx.victory(); setTimeout(function () { DN.app.sfx.victory(); }, 900); }
-    // 経験値のバーを少しずつのばす（レベルアップの演出）
-    el.querySelectorAll('.xp-row.up').forEach(function (row, k) {
-      setTimeout(function () { row.classList.add('pop'); DN.app.sfx.buff(true); }, 500 + k * 350);
+    // 経験値のバーをのばす。レベルが上がる恐竜は、いっぱいまでのびたら光って「LEVEL UP!」→ 新しいレベルのバーをのばしなおす
+    el.querySelectorAll('.xp-row').forEach(function (row, k) {
+      var bar = row.querySelector('.xr-bar i'), to = bar.dataset.to + '%', up = row.classList.contains('up');
+      setTimeout(function () { bar.style.width = up ? '100%' : to; }, 400 + k * 250);
+      if (!up) return;
+      setTimeout(function () {
+        row.classList.add('pop'); DN.app.sfx.buff(true);
+        bar.style.transition = 'none'; bar.style.width = '0%';
+        void bar.offsetWidth;
+        bar.style.transition = ''; bar.style.width = to;
+      }, 1300 + k * 250);
     });
     on(el, '#rs-next', function () { DN.app.startMatch(); });
     on(el, '#rs-retry', function () { DN.Progress.startRun(s, t); DN.app.save(); DN.app.startMatch(); });

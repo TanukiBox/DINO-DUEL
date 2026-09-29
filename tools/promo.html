@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>DINO DUEL 紹介画像</title>
+<!--
+  紹介用の画像を作るページ（ゲームの絵をそのまま使う）。
+    ?kind=ogp&lang=ja   … X などにリンクを貼ったときの画像・サイトの箱の絵（1200×630）
+    ?kind=poster        … サイトの箱の窓の絵（文字なし 1200×675 → 640×360 に縮める）
+    ?kind=icon          … アイコン（512×512。ブラウザのタブ・スマホのホーム画面）
+  書き出し：Edge の画面撮影（README の「紹介画像を作りなおす」）
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@800&family=Mochiy+Pop+One&display=swap">
+<style>
+  html, body { margin: 0; overflow: hidden; }
+  body { font-family: 'M PLUS Rounded 1c', sans-serif; font-weight: 800; }
+  .ogp {
+    position: relative; width: 1200px; height: 630px; overflow: hidden;
+    background:
+      repeating-conic-gradient(from 0deg at 50% 38%, rgba(255, 255, 255, 0.12) 0deg 7deg, transparent 7deg 18deg),
+      radial-gradient(ellipse at 50% 38%, #ffe27a, #ff9a2a 40%, #b8401a 75%, #5a1a0a);
+  }
+  .ground { position: absolute; left: -40px; right: -40px; bottom: -60px; height: 230px; border-radius: 50% 50% 0 0; background: linear-gradient(#8ccb54, #4e8a2a); border-top: 8px solid #2b1b12; }
+  .logo {
+    position: absolute; left: 0; right: 0; top: 26px; text-align: center;
+    font-family: 'Mochiy Pop One', sans-serif; font-size: 150px; line-height: 1; color: #ffd23a;
+    -webkit-text-stroke: 26px #2b1b12; paint-order: stroke fill; text-shadow: 0 14px 0 #2b1b12; transform: rotate(-3deg);
+  }
+  .sub {
+    position: absolute; left: 50%; top: 200px; transform: translateX(-50%) rotate(-3deg);
+    padding: 6px 30px; border-radius: 999px; background: #2b1b12; color: #fff; font-size: 36px; white-space: nowrap;
+  }
+  .dino { position: absolute; }
+  .dino svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .d1 { left: 330px; bottom: 30px; width: 560px; z-index: 3; }
+  .d2 { left: -30px; bottom: 40px; width: 420px; z-index: 2; }
+  .d3 { right: -40px; bottom: 60px; width: 440px; z-index: 2; }
+  .d3 svg { transform: scaleX(-1); }
+  .tag {
+    position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%); z-index: 5;
+    font-size: 34px; color: #fff; -webkit-text-stroke: 9px #2b1b12; paint-order: stroke fill; white-space: nowrap;
+  }
+  .badge {
+    position: absolute; right: 36px; top: 36px; z-index: 5; transform: rotate(8deg);
+    padding: 10px 22px; border-radius: 18px; background: #e5383b; border: 6px solid #2b1b12; color: #fff; font-size: 34px;
+  }
+  .ogp.poster { height: 675px; background:
+      repeating-conic-gradient(from 0deg at 50% 30%, rgba(255, 255, 255, 0.12) 0deg 7deg, transparent 7deg 18deg),
+      radial-gradient(ellipse at 50% 30%, #ffe27a, #ff9a2a 40%, #b8401a 75%, #5a1a0a); }
+  .poster .d1 { left: 170px; bottom: 10px; width: 660px; }
+  .poster .d2 { left: -90px; bottom: 30px; width: 460px; }
+  .poster .d3 { right: -70px; bottom: 50px; width: 480px; }
+  .icon { position: relative; width: 512px; height: 512px; overflow: hidden; border-radius: 0; background: radial-gradient(circle at 50% 40%, #ffe27a, #ff9a2a 55%, #b8401a); }
+  .icon .head { position: absolute; left: -64px; top: 24px; width: 572px; }
+  .icon .head svg { width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="../js/common/tb-i18n.js"></script>
+<script src="../js/game/config.js"></script>
+<script src="../js/game/data.js"></script>
+<script src="../js/game/lang.js"></script>
+<script src="../js/game/art.js"></script>
+<script src="../js/game/art-kit.js"></script>
+<script src="../js/game/art-tyranno.js"></script>
+<script src="../js/game/art-raptor.js"></script>
+<script src="../js/game/art-triceratops.js"></script>
+<script src="../js/game/art-ankylo.js"></script>
+<script src="../js/game/art-stego.js"></script>
+<script src="../js/game/art-brachio.js"></script>
+<script src="../js/game/art-iguano.js"></script>
+<script src="../js/game/art-pterano.js"></script>
+<script src="../js/game/art-elasmo.js"></script>
+<script src="../js/game/art-theropods.js"></script>
+<script src="../js/game/art-herbivores.js"></script>
+<script src="../js/game/art-skysea.js"></script>
+<script>
+  var q = new URLSearchParams(location.search), kind = q.get('kind') || 'ogp', ja = (q.get('lang') || 'ja') === 'ja';
+  var root = document.getElementById('root');
+  if (kind === 'icon') {
+    root.innerHTML = '<div class="icon"><div class="head">' + DN.art.svg(DN.dino('tyranno'), { crop: true }) + '</div></div>';
+  } else if (kind === 'poster') {
+    root.innerHTML = '<div class="ogp poster"><div class="ground"></div>' +
+      '<div class="dino d2">' + DN.art.svg(DN.dino('triceratops')) + '</div>' +
+      '<div class="dino d3">' + DN.art.svg(DN.dino('spino')) + '</div>' +
+      '<div class="dino d1">' + DN.art.svg(DN.dino('tyranno')) + '</div></div>';
+  } else {
+    root.innerHTML = '<div class="ogp"><div class="ground"></div>' +
+      '<div class="logo">DINO DUEL</div>' +
+      '<div class="sub">' + (ja ? '3体対3体の恐竜カードバトル' : '3-vs-3 Dino Card Battle') + '</div>' +
+      '<div class="dino d2">' + DN.art.svg(DN.dino('triceratops')) + '</div>' +
+      '<div class="dino d3">' + DN.art.svg(DN.dino('spino')) + '</div>' +
+      '<div class="dino d1">' + DN.art.svg(DN.dino('tyranno')) + '</div>' +
+      '<div class="badge">' + (ja ? '無料' : 'FREE') + '</div>' +
+      '<div class="tag">' + (ja ? '当たる瞬間にタップ！ 40種の恐竜を集めて大会を勝ちぬけ' : 'Tap as it hits! Collect 40 dinos and win the cups') + '</div>' +
+      '</div>';
+  }
+</script>
+</body>
+</html>
