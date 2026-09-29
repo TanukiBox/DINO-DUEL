@@ -2,6 +2,8 @@
  * DINO DUEL カードパック（アーケードの筐体からカードが1枚出てくる）
  * レア度が高いほど演出が派手：N 白 / R 青い光 / SR 紫の稲妻とゆれ / SSR 金の光の筋と大きなゆれ / EX 虹色・画面いっぱいの光。
  * 排出率はパックごとに表示（data.js の rates と同じ数字で引いている）。
+ * まとめて引く（5回・10回）：重なったカードは短い演出で下にならべ、新しい恐竜（と EX）が出たときだけ止まって大きくめくる。
+ * 最後に、引いたカードを一覧で見せる。
  */
 (function (global) {
   'use strict';
@@ -48,6 +50,9 @@
 
   var S = DN.Screens = DN.Screens || {};
   var busy = false;
+  var COUNTS = [1, 5, 10];
+  var count = 1;        // まとめて引く回数（えらんだ回数を覚えておく）
+  var skip = false;     // まとめて引く途中の「スキップ」
 
   S.shop = function (args) {
     var s = st(), el = $('scr-shop');
@@ -59,22 +64,36 @@
         '<div class="machine" id="machine">' + lights() + MACHINE + '<div class="mc-slot"><div class="mc-card" id="mc-card"></div></div></div>' +
       '</div>' +
       '<div class="scr-bot shop-bot">' +
+        '<div class="pk-count"><span>' + T('bulk') + '</span>' + COUNTS.map(function (n) {
+          return '<button class="pc' + (n === count ? ' on' : '') + '" data-n="' + n + '">' + T('timesN', { n: n }) + '</button>';
+        }).join('') + '</div>' +
         (prizes.length ? '<div class="pk-prizes">' + prizes.map(function (p) {
-          return '<button class="pk prize" data-p="' + p.id + '" style="--pc:' + p.color + '"><b>' + esc(L(p.name)) + '</b><span class="pk-cnt">× ' + s.packs[p.id] + '</span><small>' + T('openFree') + '</small></button>';
+          var n = Math.min(count, s.packs[p.id]);
+          return '<button class="pk prize" data-p="' + p.id + '" style="--pc:' + p.color + '"><b>' + esc(L(p.name)) + '</b><span class="pk-cnt">× ' + s.packs[p.id] + '</span><small>' + (n > 1 ? T('openN', { n: n }) : T('openFree')) + '</small></button>';
         }).join('') + '</div>' : '') +
         '<div class="pk-list">' + buyable.map(function (p) {
-          return '<button class="pk" data-p="' + p.id + '" style="--pc:' + p.color + '"' + (s.money < p.price ? ' disabled' : '') + '><b>' + esc(L(p.name)) + '</b>' +
-            '<span class="pk-price">' + DN.ICON.coin + num(p.price) + '</span><small>' + T('packOne') + '</small></button>';
+          return '<button class="pk" data-p="' + p.id + '" style="--pc:' + p.color + '"' + (s.money < p.price * count ? ' disabled' : '') + '><b>' + esc(L(p.name)) + '</b>' +
+            '<span class="pk-price">' + DN.ICON.coin + num(p.price * count) + '</span><small>' + (count > 1 ? T('packN', { n: count }) : T('packOne')) + '</small></button>';
         }).join('') + '</div>' +
-        '<div class="row-btns"><button class="btn" id="sh-back">' + T('back') + '</button><button class="btn" id="sh-rates">' + T('rates') + '</button></div>' +
+        '<div class="row-btns" id="sh-btns"><button class="btn" id="sh-back">' + T('back') + '</button><button class="btn" id="sh-rates">' + T('rates') + '</button></div>' +
       '</div>';
     el.querySelectorAll('.pk').forEach(function (b) {
-      b.addEventListener('click', function () { if (!busy) pull(b.dataset.p); });
+      b.addEventListener('click', function () { if (!busy) start(b.dataset.p); });
+    });
+    el.querySelectorAll('.pc').forEach(function (b) {
+      b.addEventListener('click', function () { if (busy) return; DN.app.sfx.tap(); count = +b.dataset.n; S.shop(); });
     });
     $('sh-back').addEventListener('click', function () { if (busy) return; DN.app.sfx.tap(); DN.app.go('home'); });
     $('sh-rates').addEventListener('click', function () { DN.app.sfx.tap(); showRates(); });
-    if (args && args.open && s.packs[args.open]) setTimeout(function () { pull(args.open); }, 400);
+    if (args && args.open && s.packs[args.open]) setTimeout(function () { start(args.open); }, 400);
   };
+
+  /** えらんだ回数で引く（優勝パックは持っている数まで） */
+  function start(packId) {
+    var s = st(), pack = DN.pack(packId);
+    var n = pack.price === null ? Math.min(count, s.packs[packId] || 0) : count;
+    if (n > 1) pullMany(packId, n); else pull(packId);
+  }
 
   /** 排出率の表 */
   function showRates() {
@@ -97,36 +116,107 @@
   DN.overlay = overlay;
   DN.closeOverlay = closeOverlay;
 
-  /** 1枚引く：お金を払う → 筐体が動く → カードが出る → めくる */
-  async function pull(packId) {
-    var s = st(), pack = DN.pack(packId);
-    var r = pack.price === null ? DN.Progress.openPrize(s, packId) : DN.Progress.buy(s, packId);
-    if (!r) return;
-    busy = true;
-    DN.app.save();
-    var d = DN.dino(r.id), rank = RANK[d.rarity];
-    var m = $('machine'), card = $('mc-card');
-    $('shop-money').textContent = num(s.money);
-    document.querySelectorAll('#scr-shop .pk, #sh-back').forEach(function (b) { b.disabled = true; });
-    // 1. コインを入れる → 筐体が動きだす（高いレア度ほど光が強く、ゆれる）
+  function drawOne(s, pack) {
+    var r = pack.price === null ? DN.Progress.openPrize(s, pack.id) : DN.Progress.buy(s, pack.id);
+    if (r) { DN.app.save(); $('shop-money').textContent = num(s.money); }
+    return r;
+  }
+  function lockUi() {
+    document.querySelectorAll('#scr-shop .pk, #scr-shop .pc, #sh-back').forEach(function (b) { b.disabled = true; });
+  }
+
+  /**
+   * 筐体を動かしてカードを出す。fast = まとめて引くときの短い版
+   * 1. コインを入れる → 筐体が動きだす（高いレア度ほど光が強く、ゆれる） 2. カードが出口から出てくる
+   */
+  async function runMachine(d, fast) {
+    var rank = RANK[d.rarity], m = $('machine'), card = $('mc-card');
+    card.className = 'mc-card';
     DN.app.sfx.coin();
     m.className = 'machine run g' + rank;
     m.style.setProperty('--glow', GLOW[d.rarity]);
-    await wait(450);
+    await wait(fast ? 180 : 450);
     DN.app.sfx.whirr(rank);
     if (rank >= 2) m.classList.add('shake');
-    if (rank >= 3) { await wait(500); m.classList.add('shake-hard'); DN.app.sfx.charge(3); }
-    await wait(700 + rank * 180);
-    // 2. カードが出口から出てくる（カードの裏に、レア度の色がにじむ）
+    if (rank >= 3 && !fast) { await wait(500); m.classList.add('shake-hard'); DN.app.sfx.charge(3); }
+    await wait(fast ? 260 + rank * 90 : 700 + rank * 180);
     card.className = 'mc-card out g' + rank;
     card.style.setProperty('--glow', GLOW[d.rarity]);
     DN.app.sfx.card(rank);
-    await wait(900);
-    // 3. めくる
-    reveal(r, pack);
+    await wait(fast ? 450 : 900);
   }
 
-  function reveal(r, pack) {
+  /** 1枚引く：お金を払う → 筐体が動く → カードが出る → めくる */
+  async function pull(packId) {
+    var s = st(), pack = DN.pack(packId);
+    var r = drawOne(s, pack);
+    if (!r) return;
+    busy = true;
+    lockUi();
+    await runMachine(DN.dino(r.id), false);
+    var buttons = [];
+    var again = pack.price !== null ? s.money >= pack.price : !!s.packs[pack.id];
+    if (again) buttons.push({ label: pack.price !== null ? T('pullAgain', { n: num(pack.price) }) : T('openNext'), big: true, fn: function () { closeOverlay(); resetMachine(); pull(pack.id); } });
+    buttons.push({ label: T('close'), fn: function () { closeOverlay(); resetMachine(); busy = false; S.shop(); } });
+    reveal(r, buttons);
+    busy = false;
+  }
+
+  /** まとめて引く。新しい恐竜（と EX）が出たら止まってめくる。最後に一覧 */
+  async function pullMany(packId, n) {
+    var s = st(), pack = DN.pack(packId), got = [];
+    busy = true; skip = false;
+    lockUi();
+    // 下のパネルを「引いたカード」の置き場にする
+    var bot = document.querySelector('#scr-shop .shop-bot');
+    bot.querySelectorAll('.pk-count, .pk-prizes, .pk-list').forEach(function (e) { e.remove(); });
+    bot.insertAdjacentHTML('afterbegin', '<div class="bulk-prog"><div class="bp-head">' + T('bulkGot') + ' <b id="bp-n">0</b> / ' + n + '</div><div class="mc-tray" id="mc-tray"></div></div>');
+    $('sh-btns').innerHTML = '<button class="btn" id="sh-skip">' + T('skip') + '</button>';
+    $('sh-skip').addEventListener('click', function () { DN.app.sfx.tap(); skip = true; this.disabled = true; });
+    for (var i = 0; i < n; i++) {
+      var r = drawOne(s, pack);
+      if (!r) break;
+      got.push(r);
+      var d = DN.dino(r.id), stop = r.isNew || d.rarity === 'EX';
+      if (stop || !skip) await runMachine(d, !stop);
+      if (stop) {
+        var left = n - i - 1;
+        await new Promise(function (done) {
+          reveal(r, [{ label: left > 0 ? T('continueN', { n: left }) : T('toResults'), big: true, fn: function () { closeOverlay(); done(); } }]);
+        });
+      }
+      addTray(r);
+      resetMachine();
+    }
+    summary(got, pack, n);
+  }
+
+  /** まとめて引いている途中のカード（下のパネルに顔をならべる） */
+  function addTray(r) {
+    var d = DN.dino(r.id), tray = $('mc-tray');
+    if (!tray) return;
+    $('bp-n').textContent = tray.children.length + 1;
+    tray.insertAdjacentHTML('beforeend', '<span class="mt-i r-' + d.rarity + (r.isNew ? ' new' : '') + '">' + DN.art.img(d, { crop: true }) + '</span>');
+  }
+
+  /** まとめて引いた結果の一覧 */
+  function summary(got, pack, n) {
+    var s = st(), news = got.filter(function (r) { return r.isNew; }).length;
+    var cards = got.map(function (r) {
+      var o = s.owned[r.id];
+      return '<div class="bs-c">' + DN.Card.html(r.id, { own: { lv: o.lv, stack: r.stack }, size: 's', isNew: r.isNew }) + '</div>';
+    }).join('');
+    var buttons = [];
+    var again = pack.price !== null ? s.money >= pack.price * n : (s.packs[pack.id] || 0) > 0;
+    if (again) buttons.push({ label: pack.price !== null ? T('pullAgainN', { n: n, p: num(pack.price * n) }) : T('openNext'), big: true, fn: function () { closeOverlay(); resetMachine(); busy = false; S.shop(); start(pack.id); } });
+    buttons.push({ label: T('close'), fn: function () { closeOverlay(); resetMachine(); busy = false; S.shop(); } });
+    overlay('<div class="bulk-sum"><h3>' + T('bulkResult', { n: got.length }) + '</h3>' +
+      (news ? '<p class="bs-new">' + T('bulkNew', { n: news }) + '</p>' : '') +
+      '<div class="bs-grid">' + cards + '</div></div>', buttons);
+    DN.app.sfx.good();
+  }
+
+  function reveal(r, buttons) {
     var s = st(), d = DN.dino(r.id), rank = RANK[d.rarity];
     var burst = '';
     for (var i = 0; i < 10 + rank * 8; i++) {
@@ -134,11 +224,8 @@
       burst += '<i class="rv-p" style="--a:' + a.toFixed(0) + 'deg;--d:' + dist.toFixed(0) + 'px;--c:' + GLOW[d.rarity] + ';animation-delay:' + (Math.random() * 0.2).toFixed(2) + 's"></i>';
     }
     var label = r.isNew ? '<div class="rv-new">NEW!</div>' : '<div class="rv-stack">' + T('stackUp', { n: r.stack }) + '<small>' + T('stackNote', { p: Math.round(DN.CFG.STACK_PCT * 100) }) + '</small></div>';
-    var buttons = [];
-    var again = pack.price !== null ? s.money >= pack.price : !!s.packs[pack.id];
-    if (again) buttons.push({ label: pack.price !== null ? T('pullAgain', { n: num(pack.price) }) : T('openNext'), big: true, fn: function () { closeOverlay(); resetMachine(); pull(pack.id); } });
-    if (d.rarity === 'EX') buttons.push({ label: T('share'), cls: 'x', fn: function () { DN.shareOnX(T('shareEx', { name: L(d.name) }) + '\n' + T('shareTags')); } });
-    buttons.push({ label: T('close'), fn: function () { closeOverlay(); resetMachine(); busy = false; S.shop(); } });
+    buttons = buttons.slice();
+    if (d.rarity === 'EX') buttons.splice(1, 0, { label: T('share'), cls: 'x', fn: function () { DN.shareOnX(T('shareEx', { name: L(d.name) }) + '\n' + T('shareTags')); } });
     overlay(
       '<div class="reveal g' + rank + '" style="--glow:' + GLOW[d.rarity] + '">' +
         '<div class="rv-rays"></div>' + (rank >= 4 ? '<div class="rv-rainbow"></div>' : '') +
@@ -147,7 +234,6 @@
         '<div class="rv-burst">' + burst + '</div>' +
         label +
       '</div>', buttons);
-    busy = false;
     if (rank >= 4) { DN.app.sfx.victory(); setTimeout(function () { DN.app.sfx.roarBig(); }, 300); }
     else if (rank >= 3) DN.app.sfx.victory();
     else if (rank >= 2) DN.app.sfx.perfect();

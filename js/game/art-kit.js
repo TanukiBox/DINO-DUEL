@@ -74,7 +74,7 @@
         p.defs += '<radialGradient id="' + gid + '"><stop offset="0" stop-color="' + o.glow + '" stop-opacity="0.55"/><stop offset="1" stop-color="' + o.glow + '" stop-opacity="0"/></radialGradient>';
         s += '<ellipse cx="' + o.x + '" cy="' + o.y + '" rx="' + (o.rx * 2.2) + '" ry="' + (o.ry * 1.9) + '" fill="url(#' + gid + ')"/>';
       }
-      s += '<ellipse cx="' + o.x + '" cy="' + o.y + '" rx="' + o.rx + '" ry="' + o.ry + '"' + rot + ' fill="' + (o.white ? '#fffaf0' : o.iris) + '" stroke="' + ink + '" stroke-width="1.1"/>';
+      s += '<ellipse class="k-eye" cx="' + o.x + '" cy="' + o.y + '" rx="' + o.rx + '" ry="' + o.ry + '"' + rot + ' fill="' + (o.white ? '#fffaf0' : o.iris) + '" stroke="' + ink + '" stroke-width="1.1"/>';
       if (o.white) s += '<circle cx="' + (o.x + o.rx * 0.2) + '" cy="' + o.y + '" r="' + (Math.min(o.rx, o.ry) * 0.8) + '" fill="' + o.iris + '"/>';
       var pr = o.pr || 0.45;
       if (o.pupil === 'slit') s += '<ellipse cx="' + (o.x + o.rx * 0.2) + '" cy="' + o.y + '" rx="' + (o.rx * 0.22) + '" ry="' + (o.ry * 0.85) + '" fill="' + ink + '"/>';

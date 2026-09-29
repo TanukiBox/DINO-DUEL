@@ -305,7 +305,7 @@
     var vb = '0 0 200 150';
     var fit = this.fit;
     if (crop) {
-      var b = this.headBox || HEAD_BOX[this.a.type] || [100, 20, 100];
+      var b = this.headBox || this.autoHead || HEAD_BOX[this.a.type] || [100, 20, 100];
       var x = 100 + (b[0] - 100) * size, y = 146 + (b[1] - 146) * size, w = b[2] * size;
       if (fit) { x = 100 + (x - 100) * fit.s + fit.dx; y = 146 + (y - 146) * fit.s; w = w * fit.s; }
       vb = x.toFixed(1) + ' ' + y.toFixed(1) + ' ' + w.toFixed(1) + ' ' + w.toFixed(1);
@@ -587,11 +587,12 @@
   // 描きこみ版は、絵の実際の大きさをブラウザで一度だけ測り、200×150 の枠（ふちに少し余白）から
   // はみ出す分だけ縮めて左右をずらす（しっぽの先や鼻先が切れないように）。
   var FIT_MARGIN = 5;
-  var fitCache = {};
+  var fitCache = {}, headCache = {};
   var measureBox = null;
   function fitOf(dino) {
     if (!CUSTOM[dino.id] || typeof document === 'undefined' || !document.body) return null;
     if (fitCache[dino.id] !== undefined) return fitCache[dino.id];
+    headCache[dino.id] = null;
     if (!measureBox) {
       measureBox = document.createElement('div');
       measureBox.style.cssText = 'position:absolute;left:-9999px;top:0;width:400px;height:300px;visibility:hidden;pointer-events:none';
@@ -602,17 +603,37 @@
     try {
       // 見えている形だけを測る（部品の中に切り抜かれた影や模様は除く）
       var inv = root.getCTM().inverse(), ax = 1e9, ay = 1e9, bx = -1e9, by = -1e9;
+      var hx = 1e9, hy = 1e9, hX = -1e9, hY = -1e9;   // 頭とあごだけの範囲（丸いアイコン用）
+      var eye = null;                                  // 目の位置（いちばん右の目）
       root.querySelectorAll('path, ellipse, circle, rect, polygon').forEach(function (el) {
         if (el.closest('[clip-path]') || el.closest('defs') || el.closest('mask')) return;
         var b = el.getBBox();
         if (!b.width && !b.height) return;
-        var m = inv.multiply(el.getCTM());
+        var m = inv.multiply(el.getCTM()), isHead = !!el.closest('.p-head, .p-jaw');
+        if (el.classList.contains('k-eye')) {
+          var ex = m.a * (b.x + b.width / 2) + m.c * (b.y + b.height / 2) + m.e, ey = m.b * (b.x + b.width / 2) + m.d * (b.y + b.height / 2) + m.f;
+          if (!eye || ex > eye[0]) eye = [ex, ey];
+        }
         [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]].forEach(function (q) {
           var X = m.a * q[0] + m.c * q[1] + m.e, Y = m.b * q[0] + m.d * q[1] + m.f;
           ax = Math.min(ax, X); ay = Math.min(ay, Y); bx = Math.max(bx, X); by = Math.max(by, Y);
+          if (isHead) { hx = Math.min(hx, X); hy = Math.min(hy, Y); hX = Math.max(hX, X); hY = Math.max(hY, Y); }
         });
       });
       if (bx > ax) bb = { x: ax - 1.5, y: ay - 1.5, width: bx - ax + 3, height: by - ay + 3 };
+      // 顔の四角：頭の範囲を少し広げた正方形。頭の部品がない絵（体と頭がひと続き）は、体の右はしを使う
+      // 頭の部品に長い首まで入っている絵（目が上の右寄りにあって、下へ長くのびる）は、目を中心に少し前の顔だけ
+      var FACE = 56;
+      var neck = eye && hX > hx && eye[1] - hy < 15 && hY - eye[1] > 45 && eye[0] - hx > hX - eye[0];
+      if (neck) {
+        headCache[dino.id] = [eye[0] + 8 - FACE / 2, eye[1] + 3 - FACE / 2, FACE];
+      } else if (hX > hx) {
+        var hw = Math.max(hX - hx, hY - hy) * 1.12 + 6;
+        headCache[dino.id] = [(hx + hX) / 2 - hw / 2, (hy + hY) / 2 - hw / 2, hw];
+      } else if (bx > ax) {
+        var bw = (by - ay) * 1.1;
+        headCache[dino.id] = [bx - bw + 4, (ay + by) / 2 - bw / 2, bw];
+      }
     } catch (e) { bb = null; }
     measureBox.innerHTML = '';
     if (!bb || !bb.width) { fitCache[dino.id] = null; return null; }
@@ -644,9 +665,15 @@
     img: function (dino, opt, cls) {
       return '<img class="dino-img' + (cls ? ' ' + cls : '') + '" src="' + url(dino, opt) + '" alt="" draggable="false">';
     },
+    /** 顔の四角 [x, y, 幅]（大きさ 1 のときの位置）。描きこみ版は絵を測って決める */
+    headBoxOf: function (dino) {
+      if (CUSTOM[dino.id] && CUSTOM[dino.id].box) return CUSTOM[dino.id].box;
+      fitOf(dino);
+      return headCache[dino.id] || HEAD_BOX[dino.art.type] || [100, 20, 100];
+    },
     /** 頭のあたりの位置（絵の幅・高さに対する割合、右向き） */
     headPoint: function (dino) {
-      var b = (CUSTOM[dino.id] && CUSTOM[dino.id].box) || HEAD_BOX[dino.art.type] || [100, 20, 100];
+      var b = DN.art.headBoxOf(dino);
       var size = dino.art.size || 1;
       var cx = 100 + (b[0] + b[2] / 2 - 100) * size, cy = 146 + (b[1] + b[2] / 2 - 146) * size;
       var f = fitOf(dino);
@@ -657,6 +684,7 @@
       var p = new Pen(dino, opt);
       var custom = opt && opt.plain ? null : CUSTOM[dino.id];
       if (custom && !(opt && opt.noFit)) p.fit = fitOf(dino);
+      if (custom && opt && opt.crop) p.autoHead = headCache[dino.id];
       (custom || TYPES[dino.art.type] || TYPES.theropod)(p);
       return p.finish(opt && opt.crop);
     }

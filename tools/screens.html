@@ -6,7 +6,7 @@
 <!--
   スマホの大きさ（390×780）で、ゲームの画面をならべて見るページ（確認用。ゲームには出ない）。
     ?lang=ja|en   … 言語
-    ?s=home,tour  … ならべる画面（title / home / tour / team / dex / shop / battle / result / reveal / ex）
+    ?s=home,tour  … ならべる画面（title / home / tour / team / dex / shop / battle / combo / result / win / lose / reveal / ex / shop10 / bulk）
   デバッグ用のセーブ（?debug=1）で開くので、ふつうのセーブは変わらない。
 -->
 <style>
@@ -29,11 +29,13 @@
       var w = fr.contentWindow, DN = w.DN, app = DN.app, s = app.state;
       if (name === 'battle') { DN.Progress.startRun(s, 2); app.startMatch(); return; }
       if (name === 'combo') { s.team = ['leviawing', 'mosa', 'quetzal']; DN.Progress.startRun(s, 2); app.startMatch(); return; }  // コンボ発動の演出
-      if (name === 'result') {   // 大会で優勝して、1体目と2体目がレベルアップしたところ
-        DN.Progress.startRun(s, 0); s.run.m = DN.TOURNAMENTS[0].matches.length - 1;
+      // 試合の結果：result = 大会で優勝（1体目と2体目がレベルアップ）／ win = ふつうの勝ち（空と海のチーム）／ lose = 負け
+      if (name === 'result' || name === 'win' || name === 'lose') {
+        if (name === 'win') s.team = ['leviawing', 'mosa', 'quetzal'];
+        DN.Progress.startRun(s, 0); if (name === 'result') s.run.m = DN.TOURNAMENTS[0].matches.length - 1;
         s.owned[s.team[0]].xp = 50; s.owned[s.team[1]].xp = 30;
         var before = {}; s.team.forEach(function (id) { before[id] = { lv: s.owned[id].lv, xp: s.owned[id].xp }; });
-        var r = DN.Progress.finishMatch(s, true);
+        var r = DN.Progress.finishMatch(s, name !== 'lose');
         app.go('home'); DN.Screens.result(r, before, 0, 4);
         w.document.querySelectorAll('.screen').forEach(function (x) { x.classList.toggle('active', x.id === 'scr-result'); });
         return;
@@ -43,6 +45,22 @@
         DN.Progress.draw = function () { DN.Progress.draw = draw; return 'tyranoceras'; };
         delete s.owned.tyranoceras;
         s.packs.win_legend = 1; app.go('shop', { open: 'win_legend' }); return;
+      }
+      // まとめて引く：shop10 = 10回をえらんだところ／ bulk = 10回引いて最後の一覧まで（新しい恐竜で止まったら自動で「つづける」）
+      if (name === 'shop10' || name === 'bulk') {
+        DN.DINOS.forEach(function (d) { if (d.clan === 'carnivore' && d.rarity === 'N') delete s.owned[d.id]; });
+        s.team = ['stego', 'triceratops', 'ankylo'];
+        app.go('shop');
+        w.document.querySelector('.pc[data-n="10"]').click();
+        if (name === 'bulk') {
+          w.document.querySelectorAll('#scr-shop .pk:not(.prize)')[0].click();
+          var tm = setInterval(function () {
+            var ov = w.document.getElementById('overlay');
+            if (ov.querySelector('.bulk-sum')) { clearInterval(tm); return; }
+            if (ov.classList.contains('on')) ov.querySelector('.ov-btns .btn.big').click();
+          }, 2500);
+        }
+        return;
       }
       if (name === 'reveal') { s.packs.win_legend = 1; app.go('shop', { open: 'win_legend' }); return; }
       if (name !== 'title') app.go(name);

@@ -129,10 +129,14 @@
         '<h2>' + head + '</h2>' +
         '<div class="res-line">' + (r.won ? T('turnsWon', { n: turns }) : T('loseKeep')) + '</div>' +
         '<div class="res-gain">' + (r.prize ? '<span class="gain-coin">' + ICON.coin + '+' + num(r.prize) + '</span>' : '') + '<span class="gain-xp">EXP +' + r.xp + '</span></div>' +
-        '<div class="xp-list">' + rows + '</div>' +
         (r.champion ? '<div class="prize-pack">' + ICON.pack + T('gotPack', { name: L(DN.pack(r.pack).name) }) + '</div>' : '') +
+        // 戦った3体が地面に立つ（勝つと順番に跳ねる）
+        '<div class="res-stage"><div class="res-ground"></div>' + s.team.map(function (id, k) {
+          return '<div class="rs-d" style="--k:' + k + '">' + DN.art.img(DN.dino(id)) + '</div>';
+        }).join('') + '</div>' +
       '</div>' +
       '<div class="scr-bot result-bot">' +
+        '<div class="xp-list">' + rows + '</div>' +
         (r.champion ?
           '<button class="btn big" id="rs-open">' + T('openPrize') + '</button>' +
           '<div class="row-btns"><button class="btn x" id="rs-share">' + T('share') + '</button><button class="btn" id="rs-home">' + T('toHome') + '</button></div>'

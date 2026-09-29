@@ -170,7 +170,6 @@
   LIB.bigTheropod = function (p, o) {
     var C = o.C, K = DN.artKit(p, C, o.lw || 2.5);
     var BODY = o.slim ? BIG.bodySlim : BIG.body;
-    p.headBox = [124, 4, 78];
 
     // 奥の脚
     p.open('p-legB', 72, 72);
@@ -293,7 +292,6 @@
   /** 小型の肉食。o = { C, feathers, sickle, pattern: 'stripes'|'spots', eye, big（頭を大きめに） } */
   LIB.smallTheropod = function (p, o) {
     var C = o.C, K = DN.artKit(p, C, 2.2);
-    p.headBox = [132, 30, 66];
     var pat = o.pattern === 'spots'
       ? function (w) {
         if (w === 'tail') return K.spots([[26, 60, 1.6], [38, 61, 1.8], [50, 62.4, 2], [62, 64, 2.2], [74, 67, 2.2]], C.stripe, 0.8);

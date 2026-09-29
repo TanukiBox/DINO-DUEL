@@ -41,6 +41,13 @@
       g.insertAdjacentHTML('beforeend', '<div class="cell">' + DN.art.svg(d) + d.name.ja + '</div>');
     });
     document.querySelectorAll('[class^="p-"]').forEach(function (e) { e.style.animation = 'none'; });
+  } else if (one === 'faces') {
+    // 丸いアイコン（行動順・試合の結果）に顔が入っているか。ゲームと同じく画像（img）で
+    g.style.gridTemplateColumns = 'repeat(8, 1fr)';
+    DN.DINOS.forEach(function (d) {
+      g.insertAdjacentHTML('beforeend', '<div class="cell"><span style="display:block;width:72px;height:72px;margin:0 auto 4px;border-radius:50%;overflow:hidden;background:#2d5fb8;border:3px solid #0b0f1e">' +
+        DN.art.img(d, { crop: true }).replace('<img ', '<img style="width:100%;height:100%;display:block" ') + '</span>' + d.name.ja + '</div>');
+    });
   } else if (one && DN.dino(one)) {
     // 1体だけ大きく（例：art-preview.html#tyranno）。下は描きこむ前の型の絵
     var d1 = DN.dino(one);
