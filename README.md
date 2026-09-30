@@ -22,6 +22,12 @@
 3. **カードパック**：賞金で1回1枚。レア度が高いほど筐体の光と揺れが派手になる。「排出率」で確率を表示（表示どおりに抽選）。
 4. **成長**：戦った3体に経験値（最大レベル10、1つごとに能力 +4%）。同じ恐竜をもう一度引くと「重ね +1」（1枚ごとに +5%、上限なし）。
 5. **コンボ**：同じ時代・同じ仲間の3体などでチームを組むと、能力が 10〜20% 上がる（チーム画面と図鑑に表示）。
+6. **相性**：肉食 → 草食 → 空と海 → 肉食（矢印の先に強い）。有利な相手へのダメージ +6%・不利な相手へは -3%（3体対3体なので、同じ強さなら有利な側の勝率が約15ポイント上がる）。
+7. **天井と化石**：SR 以上が出ないまま30回目は SR 以上が確定。かぶったカードは重ね強化に加えて化石ポイントになり、図鑑でほしい恐竜と交換できる。
+8. **練習試合**：優勝した大会の相手と1戦だけ（賞金は半分・経験値はふつう）。
+9. **実績**：22個の目標（図鑑・勝利数・ぴったり連続・大会優勝など）。達成すると賞金などを受け取れる。ホームに優勝トロフィーが並ぶ。
+10. **設定**（ホームの右下）：音・BGM・バトルの速さ（×2 にしても、タイミングの輪の速さは変わらない）・ふるえ（Android）・タイミング調整・セーブを守る（ホーム画面に追加／引き継ぎコード）。
+11. はじめての1戦はチュートリアル（輪がゆっくり。攻撃と防御を1回ずつ練習）。
 
 ## 自分のパソコンで動かす
 `index.html` をブラウザで開くだけで遊べる（インターネットにつながっていると丸い文字のフォントが使われる）。
@@ -55,7 +61,11 @@ URL の最後に `?debug=1`（例：https://tanukibox.github.io/DINO-DUEL/?debug
 | `js/game/bgm.js` | BGM（オリジナル13曲。楽譜を文字で書き、ブラウザの中で演奏する。場面・大会の強さ・決勝で曲が変わる） |
 | `js/game/lang.js` | 画面の文字（日本語・英語） |
 | `js/game/share.js` | X シェア（大会優勝・EX 獲得） |
-| `js/game/main.js` | 起動・画面の切りかえ・セーブ・デバッグモード |
+| `js/game/main.js` | 起動・画面の切りかえ・セーブ・デバッグモード・設定の保存 |
+| `js/game/settings.js` | 設定の画面（音・BGM・速さ・ふるえ・タイミング調整・引き継ぎコード・ホーム画面に追加） |
+| `js/game/share-image.js` | 優勝・EX のシェア用画像（1200×675）を作って保存・共有 |
+| `js/game/debug-hud.js` | `?debug=1` のときだけ、左下に fps・音の数・演出の部品の数を出す（スマホで重さを確かめる） |
+| `manifest.webmanifest` / `sw.js` | ホーム画面に追加したときの名前・アイコンと、電波がなくても遊べる仕組み（公開中の https のときだけ動く） |
 | `tools/sim.js` | バランス確認用シミュレーション（`node tools/sim.js`） |
 | `tools/art-preview.html` | 全恐竜の絵を並べて確認するページ（`#detail`、`#tyranno` などで1体だけ大きく） |
 | `tools/screens.html` | スマホの大きさでゲームの画面を並べて確認するページ（デバッグ用のセーブを使う） |
@@ -70,6 +80,7 @@ node tools/sim.js           # 3つとも
 node tools/sim.js battle    # 1. 大会ごとの平均ターン数と勝率
 node tools/sim.js career    # 2. はじめからアドバンス優勝まで：バトル回数・パック回数・プレイ時間
 node tools/sim.js growth    # 3. マスター・レジェンドに勝つのに必要な強化のめやす
+node tools/sim.js endgame   # 4. はじめからマスター優勝・レジェンド優勝までの時間
 ```
 プレイヤーのタイミングは「ふつうの人」（攻撃：ぴったり35%・おしい40%）を想定。結果は `WBS.md` の表。
 
@@ -78,10 +89,12 @@ node tools/sim.js growth    # 3. マスター・レジェンドに勝つのに�
 ```
 & "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless=new --hide-scrollbars --virtual-time-budget=5000 --window-size=1200,630 --screenshot="$PWD\assets\ogp.png" "http://localhost:8765/tools/promo.html?kind=ogp&lang=ja"
 ```
+画面の確認：`tools/screens.html?s=home,settings,ach,arena4,final,tutorial` など（書ける名前はファイルの先頭）。
+
 `kind=ogp&lang=en`（英語）・`kind=poster`（サイトの箱の窓・1200×675）・`kind=icon`（512×512）も同じように撮る。
 
 ## 公開のしかた（GitHub Pages・無料）
 - リポジトリは GitHub の組織 **TanukiBox**（TanukiBox/DINO-DUEL）。
 - Settings → Pages → Source を **Deploy from a branch**、Branch を **main** / **(root)**。main に push すると1〜2分で https://tanukibox.github.io/DINO-DUEL/ が更新される。
-- 更新がスマホに出ないときは、`index.html` の `?v=11` の数字を1つ上げる（css と js すべて）。
+- 更新がスマホに出ないときは、`index.html` の `?v=12` の数字を1つ上げる（css と js すべて）。
 - Tanuki Box のトップページ（TanukiBox/tanukibox.github.io）の `games.js` に DINO DUEL の箱を追加済み。絵は `assets/games/dino-duel*.png / .jpg`。

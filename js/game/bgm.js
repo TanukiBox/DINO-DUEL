@@ -309,7 +309,7 @@
   DN.bgmParse = parse;
 
   /** 場面ごとの曲。bgm.forScreen('home') など */
-  var SCREEN = { title: 'title', home: 'home', tour: 'tour', team: 'collect', dex: 'collect', shop: 'shop' };
+  var SCREEN = { title: 'title', home: 'home', tour: 'tour', team: 'collect', dex: 'collect', ach: 'collect', shop: 'shop' };
 
   DN.createBgm = function (sound, store) {
     var S = sound;

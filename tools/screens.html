@@ -6,7 +6,8 @@
 <!--
   スマホの大きさ（390×780）で、ゲームの画面をならべて見るページ（確認用。ゲームには出ない）。
     ?lang=ja|en   … 言語
-    ?s=home,tour  … ならべる画面（title / home / tour / team / dex / shop / battle / combo / result / win / lose / reveal / ex / shop10 / bulk）
+    ?wide=1       … 枠を 1200×675 に（shareimg を実寸で見る）
+    ?s=home,tour  … ならべる画面（title / home / tour / team / dex / shop / battle / combo / result / win / lose / reveal / ex / shop10 / bulk / arena0〜4 / final / tutorial / settings / ach / tour1 / shareimg）
   デバッグ用のセーブ（?debug=1）で開くので、ふつうのセーブは変わらない。
 -->
 <style>
@@ -20,6 +21,7 @@
 <script>
   var q = new URLSearchParams(location.search), lang = q.get('lang') || 'ja';
   var list = (q.get('s') || 'title,home,tour,team,dex,shop').split(',');
+  if (q.get('wide')) document.head.insertAdjacentHTML('beforeend', '<style>iframe { width: 1200px; height: 675px; }</style>');   // シェア画像を実寸で見る
   list.forEach(function (name) {
     var f = document.createElement('figure');
     f.innerHTML = '<figcaption>' + name + '</figcaption><iframe src="../index.html?debug=1&lang=' + lang + '"></iframe>';
@@ -27,7 +29,23 @@
     var fr = f.querySelector('iframe');
     fr.addEventListener('load', function () {
       var w = fr.contentWindow, DN = w.DN, app = DN.app, s = app.state;
+      s.tut = name === 'tutorial' ? false : true;
       if (name === 'battle') { DN.Progress.startRun(s, 2); app.startMatch(); return; }
+      // 大会ごとの背景：arena0〜arena4 ／ 決勝の登場：final ／ チュートリアル：tutorial
+      var ar = /^arena(\d)$/.exec(name);
+      if (ar) { DN.Progress.startRun(s, +ar[1]); app.startMatch(); return; }
+      if (name === 'final') { s.run = { t: 2, m: 3 }; app.startMatch(); return; }
+      if (name === 'tutorial') { DN.Progress.startRun(s, 0); app.startMatch(); return; }
+      if (name === 'settings') { app.go('home'); DN.openSettings(); return; }
+      if (name === 'ach') { app.go('ach'); return; }
+      if (name === 'tour1') { s.cleared[0] = true; s.cleared[1] = true; app.go('tour'); w.document.querySelector('.tl-row[data-t="1"]').click(); return; }
+      if (name === 'shareimg') {   // シェア用の画像（優勝）
+        app.go('home');
+        DN.drawShareImage({ kind: 'champ', title: 'ビギナー大会 優勝！', team: s.team.map(function (id) { return { id: id, own: s.owned[id] }; }) }).then(function (c) {
+          c.style.cssText = 'position:absolute;left:0;top:0;width:100%;z-index:999'; w.document.body.appendChild(c);
+        });
+        return;
+      }
       if (name === 'combo') { s.team = ['leviawing', 'mosa', 'quetzal']; DN.Progress.startRun(s, 2); app.startMatch(); return; }  // コンボ発動の演出
       // 試合の結果：result = 大会で優勝（1体目と2体目がレベルアップ）／ win = ふつうの勝ち（空と海のチーム）／ lose = 負け
       if (name === 'result' || name === 'win' || name === 'lose') {

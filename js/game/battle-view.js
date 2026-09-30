@@ -2,7 +2,10 @@
  * DINO DUEL バトル画面（場・行動順・下半分の操作パネル・タイミングの輪・演出）
  * ルールの計算は battle.js。ここは見せ方と操作だけ。
  *
- *   DN.BattleView.start({ team: [...3], foes: [...3], level: 0, onEnd: function (won, turns) {} });
+ *   DN.BattleView.start({ team: [...3], foes: [...3], level: 0, arena: 0, intro: 'final' | 'boss' | null, tutorial: false,
+ *                         onEnd: function (won, turns, info) {} });   // info = { perfects, bestChain, combo, quit }
+ *
+ * バトルの速さ（設定の ×2）：タイミングの輪は いつも同じ速さ（腕前は変わらない）。それ以外の演出と待ち時間を速くする。
  */
 (function (global) {
   'use strict';
@@ -12,7 +15,20 @@
   function $(id) { return document.getElementById(id); }
   function T(k, p) { return DN.app.i18n.t(k, p); }
   function L(o) { return o[DN.app.i18n.lang] || o.en; }
-  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms / (DN.timeScale || 1)); }); }
+  // 演出を速くする／もとに戻す（輪が出ている間は、もとの速さ）
+  DN.timeScale = 1;
+  function fast(on) { DN.timeScale = on ? (DN.app.prefs.speed || 1) : 1; }
+  // 速さを変えている間は、新しく始まる動き（WAAPI）もその速さで再生する
+  if (typeof Element !== 'undefined' && !Element.prototype.__dnAnimate) {
+    var baseAnimate = Element.prototype.animate;
+    Element.prototype.__dnAnimate = baseAnimate;
+    Element.prototype.animate = function () {
+      var a = baseAnimate.apply(this, arguments);
+      if (DN.timeScale > 1) { try { a.playbackRate = DN.timeScale; } catch (e) { /* noop */ } }
+      return a;
+    };
+  }
   function nextFrame() { return new Promise(function (r) { requestAnimationFrame(r); }); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   var RC = { N: 'var(--r-N)', R: 'var(--r-R)', SR: 'var(--r-SR)', SSR: 'var(--r-SSR)', EX: '#ff5ad0' };
@@ -25,6 +41,10 @@
   var pendingTap = null;   // タイミング待ちのときだけ関数が入る
   var runId = 0;           // 途中でやめたとき、古い処理を止めるため
   var chain = 0;           // 「ぴったり」の連続回数
+  var rec = null;          // この試合の記録（実績用）：{ perfects, bestChain }
+  var lastChoices = {};    // 前のターンにえらんだ技（「前回と同じ」ボタン）
+  var tut = null;          // チュートリアル中：{ atk: 練習ずみ, def: 練習ずみ }
+  function ringSec() { return CFG.RING_SEC * (tut ? 1.5 : 1); }
 
   // ---------------- 場 ----------------
   function buildField() {
@@ -156,8 +176,10 @@
         '<span class="n">' + esc(L(u.d.name)) + '</span></div>' +
         moveButton(u, 0) + moveButton(u, 1) + '</div>';
     }
+    var canSame = B.side(st, 0).every(function (u) { return lastChoices[u.uid] !== undefined; });
     h += '<div class="cmd-foot"><button class="btn small" id="b-quit">' + T('retreat') + '</button>' +
-      '<span class="hint" id="pick-hint"></span>' +
+      (canSame ? '<button class="btn small same" id="b-same">' + T('sameAgain') + '</button>' : '<span class="hint" id="pick-hint"></span>') +
+      '<button class="btn small spd" id="b-spd">' + T(DN.app.prefs.speed > 1 ? 'speed2' : 'speed1') + '</button>' +
       '<button class="btn small" id="b-snd">' + soundLabel() + '</button></div>';
     p.innerHTML = h;
     p.querySelectorAll('.mv').forEach(function (b) {
@@ -166,11 +188,28 @@
     $('b-quit').addEventListener('click', function () {
       DN.app.sfx.tap();
       DN.overlay('<div class="confirm"><p>' + T('quitConfirm') + '</p></div>', [
-        { label: T('quitYes'), fn: function () { DN.closeOverlay(); V.stop(); if (opts.onEnd) opts.onEnd(false, st.turn, { quit: true }); } },
+        { label: T('quitYes'), fn: function () { DN.closeOverlay(); V.stop(); if (opts.onEnd) opts.onEnd(false, st.turn, { quit: true, perfects: rec.perfects, bestChain: rec.bestChain }); } },
         { label: T('quitNo'), big: true, fn: DN.closeOverlay }
       ]);
     });
     $('b-snd').addEventListener('click', function () { DN.app.sound.toggle(); DN.app.sfx.tap(); $('b-snd').textContent = soundLabel(); });
+    $('b-spd').addEventListener('click', function () {
+      var pr = DN.app.prefs;
+      pr.speed = pr.speed > 1 ? 1 : 2;
+      DN.app.savePrefs();
+      DN.app.sfx.tap();
+      $('b-spd').textContent = T(pr.speed > 1 ? 'speed2' : 'speed1');
+      fast(true);
+    });
+    var same = $('b-same');
+    if (same) same.addEventListener('click', function () {
+      if (acting) return;
+      B.side(st, 0).forEach(function (u) {
+        if (choices[u.uid] !== undefined) return;
+        var b = document.querySelector('.cmd-row[data-uid="' + u.uid + '"] .mv[data-i="' + lastChoices[u.uid] + '"]');
+        pick(u.uid, lastChoices[u.uid], b, null);
+      });
+    });
     updatePickHint();
   }
   function soundLabel() { return T('sound') + (DN.app.sound.muted ? ' OFF' : ' ON'); }
@@ -187,6 +226,7 @@
     if (acting) return;
     choices[uid] = i;
     DN.app.sfx.press();
+    DN.buzz('pick');
     var row = document.querySelector('.cmd-row[data-uid="' + uid + '"]');
     row.classList.add('done');
     row.querySelectorAll('.mv').forEach(function (b) { b.classList.toggle('sel', +b.dataset.i === i); });
@@ -228,11 +268,40 @@
     $('turn-badge').textContent = T('turn', { n: st.turn }) + ' ・ ' + (opts.label || T('lv_' + lv.key));
     splash(T('turn', { n: st.turn }));
     DN.app.sfx.turn();
+    fast(true);
     renderCommand();
     previewOrder();
+    if (tut && st.turn === 1) coach(T('coachPick'));
+  }
+
+  // ---------------- チュートリアルの吹き出し ----------------
+  function coach(text) {
+    var c = $('coach');
+    if (!c) { c = document.createElement('div'); c.id = 'coach'; c.className = 'coach'; $('scr-battle').appendChild(c); }
+    c.textContent = text;
+    c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop');
+  }
+  function coachOff() { var c = $('coach'); if (c) c.remove(); }
+
+  /** チュートリアル：はじめての攻撃・防御の前に、輪だけで練習（「おしい」以上が出るまで。4回まで） */
+  async function practiceRing(kind, id) {
+    for (var k = 0; k < 4; k++) {
+      if (id !== runId) return;
+      showPad(kind);
+      coach(k === 0 ? T(kind === 'atk' ? 'coachAtk' : 'coachDef') : T('coachAgain'));
+      var t0 = performance.now(), tHit = t0 + CFG.RING_SEC * 1.8 * 1000;
+      var j = await timingRing(kind, t0, tHit, []);
+      await untilTime(tHit);
+      await wait(650);
+      if (j !== 'miss') { coach(T('coachNice')); await wait(700); break; }
+    }
+    tut[kind] = true;
+    if (tut.atk && tut.def) { coach(T('coachDone')); setTimeout(coachOff, 1800); }
   }
 
   async function runTurn(id) {
+    if (tut && st.turn === 1) coachOff();
+    B.side(st, 0).forEach(function (u) { lastChoices[u.uid] = choices[u.uid]; });
     st.units.forEach(function (u) { if (u.side === 1 && u.alive) choices[u.uid] = B.aiChoose(st, u); });
     var acts = B.order(st, choices);
     renderOrder(acts, 0);
@@ -335,8 +404,9 @@
         if (pad) pad.classList.remove('hot');
         minis.forEach(function (m) { m.remove(); });
         chain = j === 'perfect' ? chain + 1 : 0;
+        if (j === 'perfect' && rec) { rec.perfects++; rec.bestChain = Math.max(rec.bestChain, chain); }
         judgeFx(j, kind);
-        if (j === 'perfect') { DN.app.sfx.perfect(); DN.app.sfx.shatter(); fx('flash gold'); }
+        if (j === 'perfect') { DN.app.sfx.perfect(); DN.app.sfx.shatter(); fx('flash gold'); DN.buzz('perfect'); }
         else if (j === 'good') { DN.app.sfx.good(); DN.app.sfx.shatter(true); }
         else DN.app.sfx.miss();
         resolve(j);
@@ -406,6 +476,9 @@
     var targets = B.targets(st, u, mv);
     if (!targets.length) return;
     var kind = mine ? 'atk' : 'def';
+    // チュートリアル：はじめての攻撃・防御の前に練習
+    if (tut && !tut[kind]) { fast(false); await practiceRing(kind, id); if (id !== runId) return; }
+    fast(false);   // 輪が出ている間は、もとの速さ
 
     // 技名
     var ban = fx('banner k-' + kindOf(mv) + (mine ? '' : ' foe'), '<small>' + esc(T('uses', { name: L(u.d.name) })) + '</small>' + esc(L(mv.name)));
@@ -422,7 +495,7 @@
       fx('ring-mini target', '', p);
       minis.push(fx('ring-mini ' + kind, '', p));
     });
-    var t0 = performance.now(), tHit = t0 + CFG.RING_SEC * 1000;
+    var t0 = performance.now(), tHit = t0 + ringSec() * 1000;
 
     // 技ごとの動き：ためる → 当たる瞬間に合わせて打ちこむ
     toLive(u);
@@ -434,6 +507,7 @@
     var j = await timingRing(kind, t0, tHit, minis);
     await untilTime(tHit);
     if (id !== runId) { clearTimeout(strikeTimer); return; }
+    fast(true);    // 当たったあとの演出は、設定の速さで
     ban.remove();
 
     // タイミング倍率（相手の分は AI が大会の強さで決める）
@@ -483,12 +557,14 @@
         s.sprite.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-7px,0)' }, { transform: 'translate(7px,0)' }, { transform: 'translate(-4px,0)' }, { transform: 'translate(0,0)' }], { duration: 300, delay: anim.stop });
         floatNum(t, String(hit.dmg), hit.crit ? 'crit' : (strong ? 'big' : ''), 0.25 - h * 0.15);
         if (hit.crit) floatNum(t, T('critical'), 'txt up', -0.15);
+        if (h === 0 && hit.edge) floatNum(t, T(hit.edge > 0 ? 'edgeUp' : 'edgeDown'), 'txt edge ' + (hit.edge > 0 ? 'up' : 'bad'), 0.95);
         if (!mine && h === 0 && j !== 'miss') { DN.app.sfx.guard(); fx('guard-fx', '', spot(t, 0.5)); }
         if (mine && h === 0 && aiDef[t.uid] && aiDef[t.uid] !== 'miss') floatNum(t, T('aiGuard'), 'small', 0.85);
         updateHud(t);
       });
       if (anyHit) {
         DN.app.sfx.hit(crit);
+        if (crit) DN.buzz('crit'); else if (!mine && j === 'miss') DN.buzz('hurt');
         var lvl = Math.max(anim.shake, crit ? 3 : 0, strong ? 2 : 0);
         DN.FX.shake(lvl);
         if (crit || (strong && anim.shake >= 2)) DN.FX.flash(crit ? '' : 'gold');
@@ -519,6 +595,7 @@
         DN.FX.particles(p.x, p.y, { n: 12, angle: -90, spread: 80, speed: 70, colors: ['#d6bc8e', '#b39068', '#fff'], gravity: 40, size: 10 });
       });
       DN.app.sfx.faint();
+      DN.buzz('faint');
       DN.FX.shake(2);
       await wait(560);
     }
@@ -528,6 +605,9 @@
   function finish(won) {
     acting = true;
     pendingTap = null;
+    coachOff();
+    var endWait = 1800 / (DN.timeScale || 1);
+    fast(false);
     $('tapzone').classList.remove('on');
     DN.app.bgm.stop(0.6);
     if (won) DN.app.sfx.victory(); else DN.app.sfx.defeat();
@@ -535,7 +615,30 @@
     var turns = st.turn, id = runId;
     $('panel').innerHTML = '<div class="result ' + (won ? 'win' : 'lose') + '"><h2>' + T(won ? 'win' : 'lose') + '</h2>' +
       '<p>' + (won ? T('winSub', { n: turns }) : T('loseSub')) + '</p></div>';
-    setTimeout(function () { if (id === runId && opts.onEnd) opts.onEnd(won, turns, {}); }, 1800);
+    var info = { perfects: rec.perfects, bestChain: rec.bestChain, combo: (st.combos[0] || []).length > 0 };
+    setTimeout(function () { if (id === runId && opts.onEnd) opts.onEnd(won, turns, info); }, endWait);
+  }
+
+  /** 決勝・強敵の登場：大きな文字のあと、相手が1体ずつ名前つきで出てくる */
+  async function showIntro(id, kind) {
+    var foes = B.side(st, 1);
+    fx('intro-banner ' + kind, '<b>' + esc(T(kind === 'final' ? 'finalBattle' : 'bossBattle')) + '</b><small>' + esc(opts.label || '') + '</small>');
+    DN.app.sfx.charge(3);
+    DN.FX.shake(2);
+    await wait(1300);
+    for (var i = 0; i < foes.length; i++) {
+      if (id !== runId) return;
+      var u = foes[i], sl = slots[u.uid];
+      sl.root.classList.remove('intro-hide');
+      sl.sprite.animate([{ transform: 'translateX(80px) scale(1.3)', opacity: 0 }, { transform: 'translateX(-6px) scale(1.05)', opacity: 1, offset: 0.6 }, { transform: 'none', opacity: 1 }],
+        { duration: 520, easing: 'cubic-bezier(.2,.9,.3,1)' });
+      var p = spot(u, 0.45);
+      p.x = $('field').getBoundingClientRect().width * 0.5;   // 名前の札はレーンのまん中（右はしで切れないように）
+      fx('intro-name', '<b>' + esc(L(u.d.name)) + '</b><small>' + u.d.rarity + ' ・ Lv' + u.lv + (u.stack ? ' +' + u.stack : '') + '</small>', p);
+      if (u.d.rarity === 'SSR' || u.d.rarity === 'EX') DN.app.sfx.roarBig(); else DN.app.sfx.growl();
+      DN.FX.shake(u.d.rarity === 'EX' ? 3 : 1);
+      await wait(900);
+    }
   }
 
   /** コンボ発動の演出（バトルのはじめ） */
@@ -568,24 +671,35 @@
     st = B.create(o.team, o.foes, { b: { statMul: lv.statMul } });
     pendingTap = null;
     chain = 0;
+    rec = { perfects: 0, bestChain: 0 };
+    lastChoices = {};
+    tut = o.tutorial ? { atk: false, def: false } : null;
+    coachOff();
+    $('field').className = 'field sky arena-' + (o.arena || 0);   // 大会ごとの背景
     buildField();
     acting = true;
     $('panel').innerHTML = '';
     $('turn-badge').textContent = o.label || '';
     var id = runId;
-    showCombos(id).then(function () { if (id === runId) newTurn(); });
+    fast(true);
+    if (o.intro) B.side(st, 1).forEach(function (u) { slots[u.uid].root.classList.add('intro-hide'); });
+    (o.intro ? showIntro(id, o.intro) : Promise.resolve())
+      .then(function () { return id === runId ? showCombos(id) : null; })
+      .then(function () { if (id === runId) newTurn(); });
   };
   V.stop = function () {
     runId++;
     pendingTap = null;
     acting = false;
+    fast(false);
+    coachOff();
     $('tapzone').classList.remove('on');
   };
-  /** タップ・クリック・スペースキー（共通土台の片手操作から呼ばれる） */
+  /** タップ・クリック・スペースキー（共通土台の片手操作から呼ばれる）。設定のずれ（ミリ秒）を引く */
   V.press = function (pos) {
     if (!pendingTap) return;
     ripple(pos);
-    pendingTap(performance.now());
+    pendingTap(performance.now() - (DN.app.prefs.tapOffset || 0));
   };
   V.state = function () { return st; };
   /** 確認用：1体の技を1回だけ動かす（例：DN.BattleView.demo(0, 0)） */

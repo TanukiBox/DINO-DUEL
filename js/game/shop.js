@@ -60,11 +60,11 @@
     var prizes = DN.PACKS.filter(function (p) { return p.price === null && s.packs[p.id]; });
     el.innerHTML =
       '<div class="scr-top shop-top">' +
-        '<div class="top-bar"><span class="scr-title">' + T('menuShop') + '</span><span class="coin-chip">' + DN.ICON.coin + '<b id="shop-money">' + num(s.money) + '</b></span></div>' +
+        '<div class="top-bar"><span class="scr-title">' + T('menuShop') + '</span><span class="fossil-chip">' + DN.ICON.fossil + '<b id="shop-fossil">' + num(s.fossils) + '</b></span><span class="coin-chip">' + DN.ICON.coin + '<b id="shop-money">' + num(s.money) + '</b></span></div>' +
         '<div class="machine" id="machine">' + lights() + MACHINE + '<div class="mc-slot"><div class="mc-card" id="mc-card"></div></div></div>' +
       '</div>' +
       '<div class="scr-bot shop-bot">' +
-        '<div class="pk-count"><span>' + T('bulk') + '</span>' + COUNTS.map(function (n) {
+        '<div class="pk-count"><span>' + T('bulk') + '<em class="pity">' + T('pityLeft', { n: DN.Progress.pityLeft(s) }) + '</em></span>' + COUNTS.map(function (n) {
           return '<button class="pc' + (n === count ? ' on' : '') + '" data-n="' + n + '">' + T('timesN', { n: n }) + '</button>';
         }).join('') + '</div>' +
         (prizes.length ? '<div class="pk-prizes">' + prizes.map(function (p) {
@@ -118,7 +118,7 @@
 
   function drawOne(s, pack) {
     var r = pack.price === null ? DN.Progress.openPrize(s, pack.id) : DN.Progress.buy(s, pack.id);
-    if (r) { DN.app.save(); $('shop-money').textContent = num(s.money); }
+    if (r) { DN.app.save(); $('shop-money').textContent = num(s.money); $('shop-fossil').textContent = num(s.fossils); }
     return r;
   }
   function lockUi() {
@@ -202,6 +202,7 @@
   /** まとめて引いた結果の一覧 */
   function summary(got, pack, n) {
     var s = st(), news = got.filter(function (r) { return r.isNew; }).length;
+    var fos = got.reduce(function (a, r) { return a + (r.fossil || 0); }, 0);
     var cards = got.map(function (r) {
       var o = s.owned[r.id];
       return '<div class="bs-c">' + DN.Card.html(r.id, { own: { lv: o.lv, stack: r.stack }, size: 's', isNew: r.isNew }) + '</div>';
@@ -212,6 +213,7 @@
     buttons.push({ label: T('close'), fn: function () { closeOverlay(); resetMachine(); busy = false; S.shop(); } });
     overlay('<div class="bulk-sum"><h3>' + T('bulkResult', { n: got.length }) + '</h3>' +
       (news ? '<p class="bs-new">' + T('bulkNew', { n: news }) + '</p>' : '') +
+      (fos ? '<p class="bs-fossil">' + DN.ICON.fossil + T('fossilTotal', { n: num(fos) }) + '</p>' : '') +
       '<div class="bs-grid">' + cards + '</div></div>', buttons);
     DN.app.sfx.good();
   }
@@ -223,9 +225,14 @@
       var a = Math.random() * 360, dist = 90 + Math.random() * 120 + rank * 20;
       burst += '<i class="rv-p" style="--a:' + a.toFixed(0) + 'deg;--d:' + dist.toFixed(0) + 'px;--c:' + GLOW[d.rarity] + ';animation-delay:' + (Math.random() * 0.2).toFixed(2) + 's"></i>';
     }
-    var label = r.isNew ? '<div class="rv-new">NEW!</div>' : '<div class="rv-stack">' + T('stackUp', { n: r.stack }) + '<small>' + T('stackNote', { p: Math.round(DN.CFG.STACK_PCT * 100) }) + '</small></div>';
+    var label = r.isNew ? '<div class="rv-new">NEW!</div>' : '<div class="rv-stack">' + T('stackUp', { n: r.stack }) + '<small>' + T('stackNote', { p: Math.round(DN.CFG.STACK_PCT * 100) }) +
+      (r.fossil ? ' ・ ' + T('fossilGain', { n: r.fossil }) : '') + '</small></div>';
+    if (r.pity) label = '<div class="rv-pity">' + T('pityHit') + '</div>' + label;
     buttons = buttons.slice();
-    if (d.rarity === 'EX') buttons.splice(1, 0, { label: T('share'), cls: 'x', fn: function () { DN.shareOnX(T('shareEx', { name: L(d.name) }) + '\n' + T('shareTags')); } });
+    if (d.rarity === 'EX') {
+      buttons.splice(1, 0, { label: T('share'), cls: 'x', fn: function () { DN.shareOnX(T('shareEx', { name: L(d.name) }) + '\n' + T('shareTags')); } },
+        { label: T('saveImage'), fn: function () { DN.saveImage({ kind: 'ex', title: 'EX GET!', team: [{ id: d.id, own: s.owned[d.id] }] }); } });
+    }
     overlay(
       '<div class="reveal g' + rank + '" style="--glow:' + GLOW[d.rarity] + '">' +
         '<div class="rv-rays"></div>' + (rank >= 4 ? '<div class="rv-rainbow"></div>' : '') +
@@ -240,6 +247,8 @@
     else if (rank >= 2) DN.app.sfx.perfect();
     else DN.app.sfx.good();
   }
+
+  DN.reveal = reveal;   // 図鑑の化石交換でも使う
 
   function resetMachine() {
     var m = $('machine'), c = $('mc-card');

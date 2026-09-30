@@ -6,6 +6,7 @@
  *   node tools/sim.js battle     … 1. バトル：大会の試合ごとの平均ターン数と勝率
  *   node tools/sim.js career     … 2. はじめからアドバンス優勝まで：バトル回数・パック回数・プレイ時間
  *   node tools/sim.js growth     … 3. マスター・レジェンドに勝つのに必要な強化のめやす
+ *   node tools/sim.js endgame    … 4. はじめからマスター優勝・レジェンド優勝まで：プレイ時間（やりこみの長さ）
  *
  * プレイヤーのタイミングは「ふつうの人」（PLAYER の確率）。1戦・1パックの時間は TIME のめやす。
  */
@@ -69,27 +70,51 @@ function simBattles() {
 }
 
 // ---------------- 2. はじめからアドバンス優勝まで ----------------
-function career(goal) {
+/**
+ * ふつうのプレイヤーの動き：
+ *  ・お金があるだけ全種パックを引き、優勝パック・実績のごほうびは受け取る
+ *  ・化石ポイントは、チームに SR 以下がいれば持っていない SSR と交換、そうでなければチームの重ねの少ない恐竜に
+ *  ・まだ優勝していない、いちばん上の大会に出る。負けたら、1つ下の大会（優勝ずみ）を1回まわって稼いでから再挑戦
+ */
+function career(goal, limit) {
   var s = P.newState();
+  s.tut = true;
   var battles = 0, turns = 0, packs = 0, byTour = [];
-  var guard = 0;
-  while (!s.cleared[goal] && guard++ < 2000) {
-    // お金があるだけ全種パックを引き、優勝パックは開ける
-    Object.keys(s.packs).forEach(function (k) { while (s.packs[k]) { P.openPrize(s, k); packs++; } });
-    while (s.money >= DN.pack('all').price) { P.buy(s, 'all'); packs++; }
-    s.team = P.bestTeam(s);
-    // まだ優勝していない、いちばん上の大会に出る
-    var t = s.cleared.indexOf(false);
+  var guard = 0, farm = false;
+  function play(t) {
     P.startRun(s, t);
     while (s.run) {
       var r = battle(P.teamSpecs(s), P.opponent(s), DN.TOURNAMENTS[t].ai);
       battles++; turns += r.turns;
       var res = P.finishMatch(s, r.won);
-      if (res.champion) byTour[t] = { battles: battles, packs: packs, turns: turns };
+      if (res.champion && !byTour[t]) byTour[t] = { battles: battles, packs: packs, turns: turns };
+      if (!r.won) return false;
     }
+    return true;
+  }
+  while (!s.cleared[goal] && guard++ < (limit || 4000)) {
+    P.achList(s).forEach(function (x) { if (x.done && !x.got) P.claimAch(s, x.a.id); });
+    Object.keys(s.packs).forEach(function (k) { while (s.packs[k]) { P.openPrize(s, k); packs++; } });
+    while (s.money >= DN.pack('all').price) { P.buy(s, 'all'); packs++; }
+    s.team = P.bestTeam(s);
+    spendFossils(s);
+    s.team = P.bestTeam(s);
+    var t = s.cleared.indexOf(false);
+    if (farm && t > 0) { play(t - 1); farm = false; continue; }
+    farm = !play(t);
   }
   var min = (turns * TIME.turn + battles * TIME.battleExtra + packs * TIME.pack) / 60;
   return { battles: battles, packs: packs, minutes: min, byTour: byTour, state: s };
+}
+function spendFossils(s) {
+  var high = function (id) { return ['SSR', 'EX'].indexOf(DN.dino(id).rarity) >= 0; };
+  for (var guard = 0; guard < 50; guard++) {
+    var weak = s.team.some(function (id) { return !high(id); });
+    var want = weak ? DN.DINOS.filter(function (d) { return d.rarity === 'SSR' && !s.owned[d.id]; }).map(function (d) { return d.id; })[0] : null;
+    if (!want) want = s.team.slice().sort(function (a, b) { return s.owned[a].stack - s.owned[b].stack; })[0];
+    if (!P.exchange(s, want)) return;
+    s.team = P.bestTeam(s);
+  }
 }
 
 function simCareer() {
@@ -151,7 +176,27 @@ function simGrowth() {
   });
 }
 
+// ---------------- 4. マスター・レジェンド優勝まで ----------------
+function simEndgame() {
+  console.log('\n■ 4. はじめからマスター優勝・レジェンド優勝まで（ふつうのプレイヤー・各60回）');
+  [3, 4].forEach(function (g) {
+    var N = 60, mins = [], left = 0, tm = { lv: 0, stack: 0 };
+    for (var i = 0; i < N; i++) {
+      var c = career(g, 6000);
+      if (!c.state.cleared[g]) left++;
+      mins.push(c.minutes);
+      P.teamSpecs(c.state).forEach(function (x) { tm.lv += x.lv; tm.stack += x.stack; });
+    }
+    mins.sort(function (a, b) { return a - b; });
+    var avg = mins.reduce(function (a, b) { return a + b; }, 0) / N;
+    console.log('  ' + DN.TOURNAMENTS[g].key.padEnd(7) + ' 優勝まで 平均 ' + (avg / 60).toFixed(1) + ' 時間（早い人 ' + (mins[Math.floor(N * 0.1)] / 60).toFixed(1) +
+      '〜遅い人 ' + (mins[Math.floor(N * 0.9)] / 60).toFixed(1) + ' 時間）・そのときのチーム 平均レベル ' + (tm.lv / N / 3).toFixed(1) + '・重ね +' + (tm.stack / N / 3).toFixed(1) +
+      (left ? '・時間内に優勝できなかった人 ' + left + '/' + N : ''));
+  });
+}
+
 console.log('DINO DUEL シミュレーション');
 if (mode === 'all' || mode === 'battle') simBattles();
 if (mode === 'all' || mode === 'career') simCareer();
 if (mode === 'all' || mode === 'growth') simGrowth();
+if (mode === 'all' || mode === 'endgame') simEndgame();

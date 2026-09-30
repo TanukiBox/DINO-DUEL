@@ -15,7 +15,8 @@
   var DN = global.DN = global.DN || {};
 
   function $(id) { return document.getElementById(id); }
-  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  // バトルの速さ（×2）のときは待ち時間も半分（DN.timeScale は battle-view.js が決める）
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms / (DN.timeScale || 1)); }); }
   function rnd(a, b) { return a + Math.random() * (b - a); }
   function T(k) { return DN.app.i18n.t(k); }
   function sfx() { return DN.app.sfx; }

@@ -95,11 +95,18 @@
   };
 
   /** 1回ぶんのダメージ */
+  /** 仲間の相性：肉食 → 草食 → 空と海 → 肉食（矢印の先に強い）。1 = 有利、-1 = 不利、0 = ふつう */
+  var BEATS = { carnivore: 'herbivore', herbivore: 'skysea', skysea: 'carnivore' };
+  B.clanEdge = function (a, b) {
+    var ca = (a.d || a).clan, cb = (b.d || b).clan;
+    return BEATS[ca] === cb ? 1 : BEATS[cb] === ca ? -1 : 0;
+  };
   B.damage = function (st, actor, target, mv, atkMul, defMul) {
     var crit = st.rand() * 100 < actor.dex;
     var r = CFG.RAND_MIN + (CFG.RAND_MAX - CFG.RAND_MIN) * st.rand();
-    var dmg = mv.power * (B.atkOf(actor) / B.defOf(target)) * CFG.DMG_K * r * (crit ? CFG.CRIT_MUL : 1) * atkMul * defMul;
-    return { dmg: Math.max(1, Math.round(dmg)), crit: crit };
+    var edge = B.clanEdge(actor, target), clan = edge > 0 ? CFG.CLAN_ADV : edge < 0 ? CFG.CLAN_DIS : 1;
+    var dmg = mv.power * (B.atkOf(actor) / B.defOf(target)) * CFG.DMG_K * r * (crit ? CFG.CRIT_MUL : 1) * atkMul * defMul * clan;
+    return { dmg: Math.max(1, Math.round(dmg)), crit: crit, edge: edge };
   };
 
   function hurt(u, dmg) {

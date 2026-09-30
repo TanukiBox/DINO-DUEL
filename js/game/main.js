@@ -15,9 +15,15 @@
   var debug = /[?&]debug=1(&|$)/.test(global.location.search);
   var store = TB.createStore(debug ? 'dino-duel-debug' : 'dino-duel');
   var i18n = TB.createI18n(DN.TEXT, 'en');
-  var sound = TB.createSound(TB.createStore('dino-duel'));   // 音のオンオフは共通
+  var common = TB.createStore('dino-duel');                   // 設定はデバッグでも共通
+  var sound = TB.createSound(common);   // 音のオンオフ
   var sfx = DN.createSfx(sound);
-  var bgm = DN.createBgm(sound, TB.createStore('dino-duel'));   // BGM のオンオフも共通
+  var bgm = DN.createBgm(sound, common);   // BGM のオンオフ
+  // 設定：バトルの速さ（1 / 2）・ふるえ・タイミングのずれ（ミリ秒。タップが遅れる人はプラス）
+  var prefs = common.get('prefs', null) || {};
+  if (prefs.speed !== 2) prefs.speed = 1;
+  if (typeof prefs.vibe !== 'boolean') prefs.vibe = true;
+  if (typeof prefs.tapOffset !== 'number') prefs.tapOffset = 0;
   document.documentElement.lang = i18n.lang;
   document.title = 'DINO DUEL' + (i18n.lang === 'ja' ? '／恐竜カードバトル' : ' — Dino Card Battle');
 
@@ -32,9 +38,12 @@
   save();
 
   var app = DN.app = {
-    store: store, i18n: i18n, sound: sound, sfx: sfx, bgm: bgm, debug: debug,
+    store: store, i18n: i18n, sound: sound, sfx: sfx, bgm: bgm, debug: debug, prefs: prefs,
     get state() { return state; },
     save: save,
+    savePrefs: function () { common.set('prefs', prefs); },
+    /** 引き継ぎコードで読みこんだセーブに入れかえる */
+    replaceState: function (s) { state = s; save(); },
     returnTo: 'home'
   };
 
@@ -53,21 +62,44 @@
     show(name);
   };
   app.showTitle = function () { app.go('title'); };
+  app.onSettingsClosed = function () {
+    var cur = document.querySelector('.screen.active');
+    if (cur && cur.id === 'scr-home') DN.Screens.home();
+    if (cur && cur.id === 'scr-title') buildTitle();
+  };
+
+  /** 練習試合（優勝した大会の相手と1戦だけ） */
+  app.startPractice = function (t) {
+    DN.Progress.startPractice(state, t);
+    save();
+    app.startMatch();
+  };
 
   /** 大会の今の試合を始める */
   app.startMatch = function () {
     var s = state, run = s.run, TT = DN.TOURNAMENTS[run.t];
     var before = {};
     s.team.forEach(function (id) { before[id] = { lv: s.owned[id].lv, xp: s.owned[id].xp }; });
-    var t = run.t, matchNo = run.m + 1;
+    var t = run.t, matchNo = run.m + 1, practice = !!run.practice;
+    var isFinal = !practice && matchNo === TT.matches.length;
+    var tutorial = !s.tut && t === 0 && !practice;
     show('battle');
-    bgm.forBattle(t, matchNo === TT.matches.length);   // 大会の強さ・決勝で曲が変わる
+    bgm.forBattle(t, isFinal);   // 大会の強さ・決勝で曲が変わる
     DN.BattleView.start({
       team: DN.Progress.teamSpecs(s),
       foes: DN.Progress.opponent(s),
       level: TT.ai,
-      label: i18n.t('matchLabel', { name: i18n.t('lv_' + TT.key), n: matchNo, m: TT.matches.length }),
-      onEnd: function (won, turns) {
+      arena: t,                  // 大会ごとの背景
+      intro: practice ? null : isFinal ? 'final' : (t >= 3 && run.m === 0 ? 'boss' : null),   // 相手が1体ずつ登場する演出
+      tutorial: tutorial,
+      label: practice ? i18n.t('practiceLabel', { name: i18n.t('lv_' + TT.key) }) : i18n.t('matchLabel', { name: i18n.t('lv_' + TT.key), n: matchNo, m: TT.matches.length }),
+      onEnd: function (won, turns, info) {
+        info = info || {};
+        // バトルの記録（実績に使う）
+        s.stats.perfects += info.perfects || 0;
+        s.stats.bestChain = Math.max(s.stats.bestChain, info.bestChain || 0);
+        if (won && info.combo) s.stats.comboWins++;
+        if (tutorial) s.tut = true;
         var r = DN.Progress.finishMatch(s, won);
         save();
         bgm.play(r.champion ? 'champion' : won ? 'win' : 'lose', true);   // 短い曲のあと、結果の曲へ
@@ -111,4 +143,9 @@
   buildTitle();
   show('title');
   bgm.play('title');   // 音は最初に画面をさわったときから鳴る（スマホのきまり）
+
+  // ホーム画面に追加したとき、電波がなくても遊べるように（手元の確認用サーバーでは使わない）
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    global.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { /* noop */ }); });
+  }
 })(window);

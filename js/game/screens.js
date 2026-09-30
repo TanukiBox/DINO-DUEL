@@ -23,8 +23,20 @@
     tour: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M6 3 H18 V8 C18 12 15 14 12 14 C9 14 6 12 6 8 Z"/><path d="M10 14 H14 L15 18 H9 Z M7 18 H17 V21 H7 Z"/><path d="M6 5 H3 C3 9 5 10 7 10 M18 5 H21 C21 9 19 10 17 10" fill="none" stroke="#fff" stroke-width="1.8"/></svg>',
     pack: '<svg viewBox="0 0 24 24" fill="#fff"><rect x="4" y="3" width="12" height="17" rx="2" transform="rotate(-10 10 12)" opacity="0.6"/><rect x="8" y="4" width="12" height="17" rx="2"/><path d="M14 8 L15.2 11 L18 11.4 L15.8 13.2 L16.6 16 L14 14.4 L11.4 16 L12.2 13.2 L10 11.4 L12.8 11 Z" fill="#9a5ae0"/></svg>',
     team: '<svg viewBox="0 0 24 24" fill="#fff"><circle cx="7" cy="9" r="3"/><circle cx="17" cy="9" r="3"/><circle cx="12" cy="7" r="3.4"/><path d="M2 20 C2 15 5 13 7 13 C9 13 10 14 10 14 C10.6 12.8 11.4 12 12 12 C12.6 12 13.4 12.8 14 14 C14 14 15 13 17 13 C19 13 22 15 22 20 Z"/></svg>',
-    dex: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 4 H11 C12 4 12 5 12 5 V21 C12 21 11 20 10 20 H4 Z M20 4 H13 C12 4 12 5 12 5 V21 C12 21 13 20 14 20 H20 Z"/></svg>'
+    dex: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M4 4 H11 C12 4 12 5 12 5 V21 C12 21 11 20 10 20 H4 Z M20 4 H13 C12 4 12 5 12 5 V21 C12 21 13 20 14 20 H20 Z"/></svg>',
+    gear: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10.5 2 H13.5 L14 5 L16.2 6 L18.7 4.3 L20.8 6.4 L19.1 8.9 L20 11.1 L23 11.6 V14.6 L20 15.1 L19.1 17.3 L20.8 19.8 L18.7 21.9 L16.2 20.2 L14 21.1 L13.5 24 H10.5 L10 21.1 L7.8 20.2 L5.3 21.9 L3.2 19.8 L4.9 17.3 L4 15.1 L1 14.6 V11.6 L4 11.1 L4.9 8.9 L3.2 6.4 L5.3 4.3 L7.8 6 L10 5 Z M12 9 A4 4 0 1 0 12.01 9 Z" fill-rule="evenodd" transform="translate(0 -1)"/></svg>',
+    medal: '<svg viewBox="0 0 24 24"><path d="M7 2 H11 L13 8 H9 Z M13 2 H17 L15 8 H11 Z" fill="#4a90ea" stroke="#2b1b12" stroke-width="1.4" stroke-linejoin="round"/><circle cx="12" cy="15" r="6.5" fill="#ffd23a" stroke="#2b1b12" stroke-width="1.8"/><path d="M12 11.5 L13 14 L15.6 14.2 L13.6 15.8 L14.3 18.4 L12 17 L9.7 18.4 L10.4 15.8 L8.4 14.2 L11 14 Z" fill="#e8a818"/></svg>',
+    fossil: '<svg viewBox="0 0 24 24"><path d="M12 2.5 C17.5 2.5 21.5 6.5 21.5 12 C21.5 17.5 17.5 21.5 12 21.5 C6.5 21.5 2.5 17.5 2.5 12 C2.5 6.5 6.5 2.5 12 2.5 Z" fill="#f0d49a" stroke="#2b1b12" stroke-width="1.8"/><path d="M12 5.5 C15.8 5.5 18.5 8.5 18.5 12 C18.5 15 16.2 17 13.4 17 C11 17 9.2 15.2 9.2 13 C9.2 11.1 10.7 9.7 12.5 9.7 C13.9 9.7 15 10.8 15 12.2 C15 13.2 14.2 14 13.2 14" fill="none" stroke="#7a4a1a" stroke-width="2.2" stroke-linecap="round"/></svg>'
   };
+  /** 仲間の小さな札（相性がわかるように色分け） */
+  function clanChip(d) { return '<i class="clan-chip c-' + d.clan + '">' + T('clan_' + d.clan) + '</i>'; }
+  DN.clanChip = clanChip;
+  /** 優勝した大会のトロフィー（ホームの棚） */
+  function shelf(s) {
+    var h = '';
+    s.cleared.forEach(function (c, i) { if (c) h += '<span class="tro t' + i + '" title="' + esc(T('tourName', { name: T('lv_' + DN.TOURNAMENTS[i].key) })) + '">' + ICON.trophy + '</span>'; });
+    return h ? '<span class="shelf">' + h + '</span>' : '';
+  }
   DN.ICON = ICON;
   function coinChip() { return '<span class="coin-chip">' + ICON.coin + '<b>' + num(st().money) + '</b></span>'; }
 
@@ -36,9 +48,10 @@
     var next = s.cleared.indexOf(false);
     var owned = DN.Progress.ownedIds(s).length;
     var prizePacks = Object.keys(s.packs).reduce(function (a, k) { return a + s.packs[k]; }, 0);
+    var achN = DN.Progress.achReady(s);
     el.innerHTML =
       '<div class="scr-top sky home-top">' +
-        '<div class="top-bar">' + coinChip() + '<span class="dex-chip">' + ICON.dex + '<b>' + owned + '/' + DN.DINOS.length + '</b></span>' + (DN.app.debug ? '<span class="dbg">DEBUG</span>' : '') + '</div>' +
+        '<div class="top-bar">' + coinChip() + '<span class="dex-chip">' + ICON.dex + '<b>' + owned + '/' + DN.DINOS.length + '</b></span>' + (DN.app.debug ? '<span class="dbg">DEBUG</span>' : '') + shelf(s) + '</div>' +
         '<div class="home-team">' + s.team.map(function (id, i) {
           var o = s.owned[id];
           return '<div class="ht ht' + i + '">' + DN.art.img(DN.dino(id)) + '<span class="ht-lv r-' + DN.dino(id).rarity + '">Lv' + o.lv + (o.stack ? ' +' + o.stack : '') + '</span></div>';
@@ -51,12 +64,12 @@
         '<button class="tile t-team" data-go="team">' + ICON.team + '<b>' + T('menuTeam') + '</b><small>' + T('menuTeamSub') + '</small></button>' +
         '<button class="tile t-dex" data-go="dex">' + ICON.dex + '<b>' + T('menuDex') + '</b><small>' + owned + ' / ' + DN.DINOS.length + '</small></button>' +
         '<div class="home-foot"><button class="btn small" id="h-title">' + T('toTitle') + '</button>' +
-        '<span class="h-snd"><button class="btn small" id="h-snd">' + T(DN.app.sound.muted ? 'soundOff' : 'soundOn') + '</button>' +
-        '<button class="btn small" id="h-bgm">' + T(DN.app.bgm.on ? 'bgmOn' : 'bgmOff') + '</button></span></div>' +
+        '<span class="h-snd"><button class="btn small ach-btn" id="h-ach">' + ICON.medal + T('achTitle') + (achN ? '<i class="badge">' + achN + '</i>' : '') + '</button>' +
+        '<button class="btn small" id="h-set">' + ICON.gear + T('settings') + '</button></span></div>' +
       '</div>';
     on(el, '[data-go]', function (b) { DN.app.go(b.dataset.go); });
-    on(el, '#h-snd', function (b) { DN.app.sound.toggle(); b.textContent = T(DN.app.sound.muted ? 'soundOff' : 'soundOn'); });
-    on(el, '#h-bgm', function (b) { DN.app.bgm.toggle(); b.textContent = T(DN.app.bgm.on ? 'bgmOn' : 'bgmOff'); });
+    on(el, '#h-ach', function () { DN.app.go('ach'); });
+    on(el, '#h-set', function () { DN.openSettings(); });
     on(el, '#h-title', function () { DN.app.go('title'); });
   };
 
@@ -70,7 +83,7 @@
   function enemyRow(team) {
     return '<div class="enemy-row">' + team.map(function (e) {
       var d = DN.dino(e.id);
-      return '<div class="en">' + DN.art.img(d, null, 'flip') + '<span class="r-' + d.rarity + '">Lv' + e.lv + (e.stack ? ' +' + e.stack : '') + '</span><small>' + esc(L(d.name)) + '</small></div>';
+      return '<div class="en">' + DN.art.img(d, null, 'flip') + '<span class="r-' + d.rarity + '">Lv' + e.lv + (e.stack ? ' +' + e.stack : '') + '</span><small>' + clanChip(d) + esc(L(d.name)) + '</small></div>';
     }).join('') + '</div>';
   }
   S.tour = function () {
@@ -97,11 +110,14 @@
             '<span class="tl-ic">' + (stt === 'locked' ? ICON.lock : stt === 'cleared' ? ICON.trophy : '<i class="tl-num">' + (k + 1) + '</i>') + '</span>' +
             '<b>' + T('tourName', { name: T('lv_' + x.key) }) + '</b><small>' + T('tst_' + stt) + '</small></button>';
         }).join('') + '</div>' +
+        '<div class="edge-hint">' + T('clanEdgeHint') + '</div>' +
         '<div class="row-btns"><button class="btn" id="tr-back">' + T('back') + '</button>' +
+        (status === 'cleared' ? '<button class="btn prac" id="tr-prac">' + T('practice') + '<small>' + T('practiceSub') + '</small></button>' : '') +
         '<button class="btn big" id="tr-go">' + (status === 'running' ? T('continueRun', { n: m + 1 }) : T('challenge')) + '</button></div>' +
       '</div>';
     on(el, '.tl-row', function (b) { selTour = +b.dataset.t; S.tour(); });
     on(el, '#tr-back', function () { DN.app.go('home'); });
+    on(el, '#tr-prac', function () { DN.app.sfx.go(); DN.app.startPractice(i); });
     el.querySelector('#tr-go').addEventListener('click', function () {
       DN.app.sfx.go();
       if (!s.run || s.run.t !== i) DN.Progress.startRun(s, i);
@@ -115,6 +131,7 @@
   S.result = function (r, before, t, turns) {
     var s = st(), el = $('scr-result'), TT = DN.TOURNAMENTS[t];
     var head = r.champion ? T('champion', { name: T('tourName', { name: T('lv_' + TT.key) }) }) : r.won ? T('win') : T('lose');
+    var sub = r.practice ? T('practiceResult') + ' ・ ' : '';
     function pct(lv, xp) { return lv >= DN.CFG.LV_MAX ? 100 : Math.round(xp / DN.Progress.xpNext(lv) * 100); }
     var rows = s.team.map(function (id) {
       var o = s.owned[id], b = before[id], d = DN.dino(id);
@@ -129,7 +146,7 @@
       '<div class="scr-top result-top ' + (r.champion ? 'champ' : r.won ? 'win' : 'lose') + '">' +
         (r.champion ? '<div class="trophy-big">' + ICON.trophy + '</div>' : '') +
         '<h2>' + head + '</h2>' +
-        '<div class="res-line">' + (r.won ? T('turnsWon', { n: turns }) : T('loseKeep')) + '</div>' +
+        '<div class="res-line">' + sub + (r.won ? T('turnsWon', { n: turns }) : (r.practice ? '' : T('loseKeep'))) + '</div>' +
         '<div class="res-gain">' + (r.prize ? '<span class="gain-coin">' + ICON.coin + '+' + num(r.prize) + '</span>' : '') + '<span class="gain-xp">EXP +' + r.xp + '</span></div>' +
         (r.champion ? '<div class="prize-pack">' + ICON.pack + T('gotPack', { name: L(DN.pack(r.pack).name) }) + '</div>' : '') +
         // 戦った3体が地面に立つ（勝つと順番に跳ねる）
@@ -139,9 +156,12 @@
       '</div>' +
       '<div class="scr-bot result-bot">' +
         '<div class="xp-list">' + rows + '</div>' +
-        (r.champion ?
+        (r.practice ?
+          '<button class="btn big" id="rs-prac">' + T('practice') + '</button>' +
+          '<div class="row-btns"><button class="btn" id="rs-tour">' + T('chooseTour') + '</button><button class="btn" id="rs-home">' + T('toHome') + '</button></div>'
+        : r.champion ?
           '<button class="btn big" id="rs-open">' + T('openPrize') + '</button>' +
-          '<div class="row-btns"><button class="btn x" id="rs-share">' + T('share') + '</button><button class="btn" id="rs-home">' + T('toHome') + '</button></div>'
+          '<div class="row-btns"><button class="btn x" id="rs-share">' + T('share') + '</button><button class="btn" id="rs-img">' + T('saveImage') + '</button><button class="btn" id="rs-home">' + T('toHome') + '</button></div>'
         : r.won ?
           '<button class="btn big" id="rs-next">' + T('nextMatch', { n: s.run.m + 1 }) + '</button>' +
           '<div class="row-btns"><button class="btn" id="rs-tour">' + T('pauseRun') + '</button><button class="btn" id="rs-team">' + T('menuTeam') + '</button></div>'
@@ -162,6 +182,10 @@
       }, 1300 + k * 250);
     });
     on(el, '#rs-next', function () { DN.app.startMatch(); });
+    on(el, '#rs-prac', function () { DN.app.startPractice(t); });
+    on(el, '#rs-img', function () {
+      DN.saveImage({ kind: 'champ', title: T('champion', { name: T('tourName', { name: T('lv_' + TT.key) }) }), team: s.team.map(function (id) { return { id: id, own: s.owned[id] }; }) });
+    });
     on(el, '#rs-retry', function () { DN.Progress.startRun(s, t); DN.app.save(); DN.app.startMatch(); });
     on(el, '#rs-tour', function () { DN.app.go('tour'); });
     on(el, '#rs-team', function () { DN.app.go('team'); });
@@ -192,6 +216,7 @@
           return '<div class="slot-card' + (i === slotSel ? ' sel' : '') + '"><span class="slot-no">' + (i + 1) + '</span>' + DN.Card.html(id, { own: s.owned[id], size: 'm' }) + '</div>';
         }).join('') + '</div>' +
         DN.Card.comboChips(s.team) +
+        '<div class="edge-hint on-top">' + T('clanEdgeHint') + '</div>' +
       '</div>' +
       '<div class="scr-bot team-bot">' +
         '<div class="slot-pick"><span>' + T('slotPick') + '</span>' + [0, 1, 2].map(function (i) { return '<button class="sp' + (i === slotSel ? ' on' : '') + '" data-s="' + i + '">' + (i + 1) + '</button>'; }).join('') +
@@ -237,17 +262,33 @@
         }).join('') + '</div>';
     el.innerHTML =
       '<div class="scr-top dex-top">' +
-        '<div class="top-bar"><span class="scr-title">' + T('menuDex') + '</span><span class="dex-chip">' + ICON.dex + '<b>' + owned.length + '/' + DN.DINOS.length + '</b></span></div>' +
+        '<div class="top-bar"><span class="scr-title">' + T('menuDex') + '</span><span class="fossil-chip">' + ICON.fossil + '<b>' + num(s.fossils) + '</b></span><span class="dex-chip">' + ICON.dex + '<b>' + owned.length + '/' + DN.DINOS.length + '</b></span></div>' +
         DN.Card.detail(dexSel, s) +
       '</div>' +
       '<div class="scr-bot dex-bot">' +
         '<div class="tabs"><button class="tab' + (dexTab === 'dino' ? ' on' : '') + '" data-tab="dino">' + T('dexTabDino', { n: owned.length, m: DN.DINOS.length }) + '</button>' +
         '<button class="tab' + (dexTab === 'combo' ? ' on' : '') + '" data-tab="combo">' + T('dexTabCombo', { n: DN.COMBOS.length }) + '</button></div>' +
         grid +
-        '<div class="row-btns"><button class="btn" id="dx-back">' + T('back') + '</button></div>' +
+        '<div class="row-btns"><button class="btn" id="dx-back">' + T('back') + '</button>' +
+        '<button class="btn xchg" id="dx-xchg"' + (s.fossils < DN.Progress.exchangeCost(dexSel) ? ' data-short="1"' : '') + '>' + ICON.fossil + T('exchange', { n: num(DN.Progress.exchangeCost(dexSel)) }) + '</button></div>' +
       '</div>';
     on(el, '.tab', function (b) { dexTab = b.dataset.tab; S.dex(); });
     on(el, '#dx-back', function () { DN.app.go('home'); });
+    on(el, '#dx-xchg', function () {
+      var id = dexSel, cost = DN.Progress.exchangeCost(id), name = L(DN.dino(id).name);
+      if (s.fossils < cost) {
+        DN.overlay('<div class="confirm"><p>' + T('exchangeShort', { n: num(cost - s.fossils) }) + '</p></div>', [{ label: T('close'), fn: DN.closeOverlay }]);
+        return;
+      }
+      DN.overlay('<div class="confirm"><p>' + esc(T('exchangeConfirm', { name: name, n: num(cost) })) + '</p></div>', [
+        { label: T('exchangeYes'), big: true, fn: function () {
+          var r = DN.Progress.exchange(s, id);
+          DN.app.save();
+          DN.reveal(r, [{ label: T('close'), fn: function () { DN.closeOverlay(); S.dex(); } }]);
+        } },
+        { label: T('back'), fn: DN.closeOverlay }
+      ]);
+    });
     el.querySelectorAll('.cg').forEach(function (b) {
       b.addEventListener('click', function () {
         dexSel = b.dataset.id;
@@ -259,4 +300,40 @@
     });
   };
   S.dexSelect = function (id) { dexSel = id; dexTab = 'dino'; };
+
+  // ======================= 実績 =======================
+  S.ach = function () {
+    var s = st(), el = $('scr-ach'), list = DN.Progress.achList(s);
+    var done = list.filter(function (x) { return x.got; }).length;
+    // 受け取れるもの → まだのもの → 受け取りずみ の順
+    list.sort(function (a, b) { var ka = a.done && !a.got ? 0 : a.got ? 2 : 1, kb = b.done && !b.got ? 0 : b.got ? 2 : 1; return ka - kb; });
+    el.innerHTML =
+      '<div class="scr-top ach-top">' +
+        '<div class="top-bar"><span class="scr-title">' + T('achTitle') + '</span>' + coinChip() + '</div>' +
+        '<div class="ach-head"><div class="ach-big">' + ICON.medal + '<b>' + done + ' / ' + list.length + '</b></div>' +
+        '<div class="ach-shelf"><small>' + T('trophies') + '</small>' + (shelf(s) || '<span class="shelf empty">—</span>') + '</div></div>' +
+      '</div>' +
+      '<div class="scr-bot ach-bot"><div class="ach-list">' + list.map(function (x) {
+        var a = x.a, rw = a.reward;
+        var reward = (rw.money ? '<span class="rw">' + ICON.coin + num(rw.money) + '</span>' : '') + (rw.pack ? '<span class="rw">' + ICON.pack + esc(L(DN.pack(rw.pack).name)) + '</span>' : '');
+        return '<div class="ach-row' + (x.got ? ' got' : x.done ? ' ready' : '') + '">' +
+          '<div class="ar-main"><b>' + T('ach_' + a.id) + '</b><small>' + T('ach_' + a.id + '_d') + '</small>' +
+          (x.goal > 1 ? '<span class="ar-bar"><i style="width:' + Math.round(x.now / x.goal * 100) + '%"></i><em>' + x.now + ' / ' + x.goal + '</em></span>' : '') + '</div>' +
+          '<div class="ar-side">' + reward + (x.got ? '<span class="ar-got">' + T('achGot') + '</span>' : x.done ? '<button class="btn small ar-claim" data-id="' + a.id + '">' + T('achClaim') + '</button>' : '') + '</div></div>';
+      }).join('') + '</div>' +
+      '<div class="row-btns"><button class="btn" id="ac-back">' + T('back') + '</button></div></div>';
+    on(el, '#ac-back', function () { DN.app.go('home'); });
+    el.querySelectorAll('.ar-claim').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var r = DN.Progress.claimAch(s, b.dataset.id);
+        if (!r) return;
+        DN.app.save();
+        DN.app.sfx.coin();
+        DN.app.sfx.buff(true);
+        var y = el.querySelector('.ach-list').scrollTop;
+        S.ach();
+        el.querySelector('.ach-list').scrollTop = y;
+      });
+    });
+  };
 })(window);
