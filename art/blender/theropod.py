@@ -78,7 +78,7 @@ class Theropod:
         self.m_skull = C.toon(col["base"], stripe=col.get("stripe") if st else None,
                               stripe_freq=st.get("head_freq", 0) if st else 0, stripe_w=0.25,
                               stripe_u=(1.02, 1.12), name="skull_" + spec["key"])
-        self.m_jaw = C.toon(col["base"], belly=col.get("belly"), belly_cut=-0.15, name="jaw_" + spec["key"])
+        self.m_jaw = C.toon(col["base"], belly=col.get("belly"), belly_cut=-0.72, name="jaw_" + spec["key"])
         self.m_limb = C.toon(col["base"], name="limb_" + spec["key"])
         self.m_far = C.toon(col.get("far", col["base"]), name="far_" + spec["key"])
         self.m_teeth = C.toon(col["teeth"])
@@ -272,12 +272,18 @@ class Theropod:
                 knee = _ik(hip, ankle, lg["thigh"], lg["shin"])
             parts = ((hip, knee, lg["r_thigh"], "thigh"), (knee, ankle, lg["r_shin"], "shin"), (ankle, ball, lg["r_meta"], "meta"))
             for a, b, rr, nm in parts:
+                if nm == "thigh":
+                    # ふともも：骨の上に、だ円の大きな筋肉（太ももの「ドラムスティック」の形）
+                    ax = (b - a)
+                    L = ax.length
+                    q = ax.normalized().to_track_quat("X", "Z").to_matrix()
+                    C.ellipsoid(a.lerp(b, 0.36), (L * 0.74, max(rr) * 0.78, max(rr) * 0.9), mat, rot=q, name=prefix + "thighm", sub=4)
+                    rr = rr[-3:]
+                    a = a.lerp(b, 0.55)
                 pts = _seg_points(a, b, len(rr))
-                if nm == "thigh":   # ふともも：前とうしろに筋肉のふくらみ
-                    pts = [p + Vector((0.03 * math.sin(math.pi * i / (len(pts) - 1)), 0, 0)) for i, p in enumerate(pts)]
                 fr = C.frames_along(pts)
                 rings = [(p, sd, up, r, r, r, 0.0) for p, (sd, up), r in zip(pts, fr, rr)]
-                bm, _ = C.loft(rings, 12)
+                bm, _ = C.loft(rings, 18 if nm == "thigh" else 12)
                 C.mesh_object(prefix + nm, bm, mat)
             # 指3本（前に開く）と爪
             for k, yaw in enumerate((-24, 0, 24)):
