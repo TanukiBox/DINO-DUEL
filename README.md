@@ -56,8 +56,7 @@ URL の最後に `?debug=1`（例：https://tanukibox.github.io/DINO-DUEL/?debug
 | `js/game/art.js` / `art-kit.js` | 恐竜の SVG を描く道具（手描き風の線・自動の影・部品のつなぎ目・枠に収める） |
 | `js/game/art-<恐竜>.js` | 最初の9種の絵（1体1ファイル） |
 | `js/game/art-theropods.js` / `art-herbivores.js` / `art-skysea.js` | 残り31種の絵（体型ごとの描き方に、種ごとの頭・色・模様・トゲなどを指定） |
-| `art/` | **ドット絵の恐竜とエフェクト**を Blender の3Dモデルから自動で作る仕組み（多幸寿と同じ方式）。使い方は `art/README.md`。いまはティラノサウルスだけ（段階1） |
-| `js/game/pix.js` / `pix-anims.js` | ドット絵の恐竜のコマ送り・エフェクト・技の動き（当たる瞬間のコマを、タイミングの輪が縮みきる時刻に合わせる） |
+| `art/` | 試作（ゲームでは使っていない）：恐竜の絵を Blender の3Dモデルから作る仕組み（ドット絵・リアル寄り・彫刻モデル）。くわしくは `art/README.md` と `WBS.md` |
 | `js/game/anims.js` | 技ごとの攻撃アニメーションと演出の部品 |
 | `js/game/sfx.js` | 効果音（カード排出・筐体の回転なども） |
 | `js/game/bgm.js` | BGM（オリジナル13曲。楽譜を文字で書き、ブラウザの中で演奏する。場面・大会の強さ・決勝で曲が変わる） |
@@ -98,5 +97,5 @@ node tools/sim.js endgame   # 4. はじめからマスター優勝・レジェ�
 ## 公開のしかた（GitHub Pages・無料）
 - リポジトリは GitHub の組織 **TanukiBox**（TanukiBox/DINO-DUEL）。
 - Settings → Pages → Source を **Deploy from a branch**、Branch を **main** / **(root)**。main に push すると1〜2分で https://tanukibox.github.io/DINO-DUEL/ が更新される。
-- 更新がスマホに出ないときは、`index.html` の `?v=15` の数字を1つ上げる（css と js すべて）。
+- 更新がスマホに出ないときは、`index.html` の `?v=16` の数字を1つ上げる（css と js すべて）。
 - Tanuki Box のトップページ（TanukiBox/tanukibox.github.io）の `games.js` に DINO DUEL の箱を追加済み。絵は `assets/games/dino-duel*.png / .jpg`。

@@ -139,7 +139,6 @@
     idle(function () { warm(i + 1); });
   }
   setTimeout(function () { warm(0); }, 600);
-  if (DN.Pix) DN.Pix.preload();   // ドット絵（恐竜とエフェクト）を先に読みこむ
 
   buildTitle();
   show('title');

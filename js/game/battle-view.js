@@ -58,13 +58,12 @@
       [0, 1].forEach(function (side) {
         var u = st.units.filter(function (x) { return x.side === side && x.lane === lane; })[0];
         var s = document.createElement('div');
-        var isPix = DN.Pix && DN.Pix.has(u.d.id);   // ドット絵の恐竜（Blender から作った絵とコマ送り）
-        s.className = 'slot ' + (side === 0 ? 'me' : 'foe') + (isPix ? ' pix-slot' : '');
+        s.className = 'slot ' + (side === 0 ? 'me' : 'foe');
         s.style.setProperty('--rc', RC[u.d.rarity]);
         s.innerHTML =
           '<div class="hud"><span class="lvb">Lv' + u.lv + (u.stack ? '+' + u.stack : '') + '</span><span class="nm">' + esc(L(u.d.name)) + '</span>' +
           '<span class="hpbar"><i></i></span><span class="hpn"></span><span class="buffs"></span></div>' +
-          '<div class="sprite"><div class="body" style="animation-delay:-' + (Math.random() * 1.8).toFixed(2) + 's">' + (isPix ? DN.Pix.html(u.d.id) : DN.art.img(u.d)) + '</div></div>';
+          '<div class="sprite"><div class="body" style="animation-delay:-' + (Math.random() * 1.8).toFixed(2) + 's">' + DN.art.img(u.d) + '</div></div>';
         row.appendChild(s);
         slots[u.uid] = {
           root: s, hp: s.querySelector('.hpbar i'), hpn: s.querySelector('.hpn'), buffs: s.querySelector('.buffs'),
@@ -73,12 +72,6 @@
         updateHud(u);
       });
       lanes.appendChild(row);
-    }
-    // ドット絵：1ドットの大きさを場に合わせて決め、待機の動きを始める
-    if (DN.Pix && lanes.querySelector('.pix')) {
-      var spr = lanes.querySelector('.sprite');
-      DN.Pix.fit($('field'), spr.clientWidth, spr.clientHeight);
-      lanes.querySelectorAll('.pix').forEach(function (el) { DN.Pix.mount(el); });
     }
   }
 
@@ -471,12 +464,10 @@
   /** 技を使う恐竜だけ、部品を動かせる本物の SVG にする（終わったら画像に戻す） */
   function toLive(unit) {
     var b = slots[unit.uid].body;
-    if (b.querySelector('.pix')) return;   // ドット絵はコマ送りで動く
     if (!b.querySelector('svg')) b.innerHTML = DN.art.svg(unit.d);
   }
   function toImage(unit) {
     var b = slots[unit.uid].body;
-    if (b.querySelector('.pix')) return;
     if (b.querySelector('svg')) b.innerHTML = DN.art.img(unit.d);
   }
 
@@ -508,10 +499,8 @@
 
     // 技ごとの動き：ためる → 当たる瞬間に合わせて打ちこむ
     toLive(u);
-    var anim = (DN.PixAnim && DN.PixAnim.get(u, act.moveId)) || DN.Anim.get(mv);
+    var anim = DN.Anim.get(mv);
     var c = DN.Anim.ctx({ u: u, targets: targets, mv: mv, slot: slotOf, t0: t0, tHit: tHit });
-    var myPix = slots[u.uid].body.querySelector('.pix');
-    if (myPix) c.ghost = function () { DN.Pix.ghost(myPix, $('fx'), $('field')); };
     anim.windup(c);
     var strikeTimer = setTimeout(function () { anim.strike(c); }, Math.max(0, tHit - performance.now() - anim.lead * 1000));
 
@@ -563,8 +552,6 @@
         crit = crit || hit.crit;
         anyCrit = anyCrit || hit.crit;
         anim.impact(c, t, hit, h);
-        var tp = s.body.querySelector('.pix');
-        if (tp && !(r.fainted && h === r.hits.length - 1)) DN.Pix.play(tp, 'hit');   // ドット絵：のけぞるコマ
         fx('spark' + (hit.crit ? ' crit' : ''), '', spot(t, 0.5));
         s.body.animate([{ filter: 'brightness(4) saturate(0)' }, { filter: 'brightness(1)' }], { duration: 260 });
         s.sprite.animate([{ transform: 'translate(0,0)' }, { transform: 'translate(-7px,0)' }, { transform: 'translate(7px,0)' }, { transform: 'translate(-4px,0)' }, { transform: 'translate(0,0)' }], { duration: 300, delay: anim.stop });
@@ -602,8 +589,6 @@
     if (res.selfFainted) down.push(u);
     if (down.length) {
       down.forEach(function (t) {
-        var dp = slots[t.uid].body.querySelector('.pix');
-        if (dp) DN.Pix.play(dp, 'faint', 'hold');   // ドット絵：たおれるコマ
         updateHud(t);
         floatNum(t, T('fainted'), 'txt bad', 0.0);
         var p = spot(t, 0.7);
