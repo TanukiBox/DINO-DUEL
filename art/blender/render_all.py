@@ -35,6 +35,11 @@ def render_species(key, out, test=None, profile=False):
     meta = {"frame": list(C.FRAME), "anims": {}, "moves": dinos.MOVES.get(key, {}), "diet": spec.get("diet", "carnivore"),
             "ready": spec.get("ready", True), "skin": spec["colors"]["base"]}
     anims = dinos.ANIMS[key]
+    if C.REAL:
+        # 模様を体に貼りつけるため、待機の1コマ目の形を先に作って、頂点の位置を覚える
+        C.REST, C.REST_RECORD = {}, True
+        body.build(anims["idle"]["frames"][0])
+        C.REST_RECORD = False
     if test:
         for name, i in test:
             body.build(anims[name]["frames"][i])
@@ -83,8 +88,10 @@ def main():
     p.add_argument("--profile", action="store_true", help="真横からの影絵も撮る（参考画像と比べる用）")
     p.add_argument("--no-model", action="store_true", help="3Dモデル（art/models/）を書きかえない")
     p.add_argument("--prev", action="store_true", help="ティラノを前の形にする（dinos.TYRANNO_PREV。比べる用）")
+    p.add_argument("--real", action="store_true", help="リアル寄りの見た目で描く（real.py。ドット絵にしない）")
     a = p.parse_args(argv)
     C.SKIN = a.skin or False
+    C.REAL = a.real
     if a.prev:
         dinos.use_prev()
     global SAVE_MODELS

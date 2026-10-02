@@ -79,6 +79,9 @@ def reset_scene(size=FRAME):
     except Exception:
         pass
     inner_lines()
+    if REAL:
+        import real
+        real.setup_scene(scene, TOON_LIGHT)
     scene.frame_set(1)
     return scene
 
@@ -257,6 +260,9 @@ def toon(base, belly=None, belly_cut=-0.35, stripe=None, stripe_freq=9.0, stripe
     belly：おなか側（形の "pv" 属性の y = 断面の上下 -1〜1 が belly_cut より下）を別の色に
     stripe：背中側のしま模様（pv の x = 体の前後 0〜1 に stripe_freq 本。stripe_u の範囲だけ）
     emit=True は光るもの（影をつけず、その色そのまま）"""
+    if REAL:
+        import real
+        return real.material(base, belly, belly_cut, stripe, stripe_freq, stripe_w, stripe_top, stripe_u, emit, name)
     key = name or "m_%s_%s_%s_%s" % (base.strip("#"), (belly or "").strip("#"), (stripe or "").strip("#"), int(emit))
     found = bpy.data.materials.get(key)
     if found:
@@ -318,7 +324,26 @@ def mesh_object(name, bm, material, smooth=True, noline=False, pv=None):
         noline_coll().objects.link(ob)
     else:
         link(ob)
+    rest_attr(ob)
     return ob
+
+
+def rest_attr(ob):
+    """模様を体に貼りつける：頂点ごとに「待機の1コマ目の形」での位置を rest 属性に入れる。
+    同じ部品は毎コマ同じ順番・同じ数の頂点で作られるので、名前と頂点の数が同じなら、その位置を使う"""
+    if REST is None:
+        return
+    me = ob.data
+    co = [c for v in me.vertices for c in v.co]
+    if REST_RECORD:
+        REST[ob.name] = co
+        data = co
+    else:
+        data = REST.get(ob.name)
+        if data is None or len(data) != len(co):
+            data = co
+    at = me.attributes.get("rest") or me.attributes.new("rest", "FLOAT_VECTOR", "POINT")
+    at.data.foreach_set("vector", data)
 
 
 def catmull(points, n):
@@ -443,6 +468,11 @@ def remove_objects(prefix):
 #   "limbs" … 胴体は管のまま、脚と腕だけスキンモディファイア
 #   "fuse"  … "limbs" のあと、胴体・脚・腕をボクセルで1つの形に溶け合わせ、なめらかにする
 SKIN = False
+# リアル寄りの見た目（real.py）。True で、Cycles のリアルな光と肌の質感になり、内側の線は描かない
+REAL = False
+# 模様を体に貼りつけるための「待機の1コマ目の形」の位置（形の名前 → 頂点の位置）。REST_RECORD のときに覚える
+REST = None
+REST_RECORD = False
 FUSE_VOXEL = 0.013    # "fuse" のボクセルの大きさ（完成の1ドット ≈ 0.034）
 SKIN_FIX = 1 / 0.92   # なめらかにすると約0.92倍に細るので、そのぶん太く置く
 
@@ -603,4 +633,91 @@ class Skin:
             at.data.foreach_set("vector", [x for p in pv for x in p])
         obj = bpy.data.objects.new(name, me)
         link(obj)
+        rest_attr(obj)
         return obj
+
+
+def fuse_prefix(prefix, name="fused", voxel=None, smooth=8):
+    """リアル寄りの見た目用：prefix の部品（線を描く部品＝体・脚・腕・頭・あご・角など。歯・爪・口の中・目玉は除く）を
+    ボクセルで1つの形に溶け合わせ、なめらかにする。つなぎ目のない1つの体になる。
+    溶け合わせると頂点が作り直されるので、模様の位置（rest）・模様用の pv・マテリアルは、元の部品のいちばん近い所から写す"""
+    from mathutils.bvhtree import BVHTree
+    from mathutils.geometry import barycentric_transform
+    voxel = voxel or FUSE_VOXEL
+    nl = noline_coll()
+    objs = [o for o in bpy.data.objects if o.name.startswith(prefix) and o.type == "MESH" and nl not in o.users_collection]
+    if not objs:
+        return None
+    mats = []
+    bm = bmesh.new()
+    rest_l = bm.verts.layers.float_vector.new("rest")
+    pv_l = bm.verts.layers.float_vector.new("pv")
+    for ob in objs:
+        me = ob.data
+        n = len(me.vertices)
+        ra = me.attributes.get("rest")
+        pa = me.attributes.get("pv")
+        R = [tuple(ra.data[i].vector) for i in range(n)] if ra else [tuple(v.co) for v in me.vertices]
+        PV = [tuple(pa.data[i].vector) for i in range(n)] if pa else [(0.0, 0.0, 0.0)] * n
+        vs = [bm.verts.new(ob.matrix_world @ v.co) for v in me.vertices]
+        for v, r, p in zip(vs, R, PV):
+            v[rest_l] = r
+            v[pv_l] = p
+        smap = []
+        for m in me.materials:
+            if m not in mats:
+                mats.append(m)
+            smap.append(mats.index(m))
+        for poly in me.polygons:
+            try:
+                f = bm.faces.new([vs[i] for i in poly.vertices])
+                f.material_index = smap[poly.material_index] if smap else 0
+            except ValueError:
+                pass
+    for ob in objs:
+        me = ob.data
+        bpy.data.objects.remove(ob)
+        if me.users == 0:
+            bpy.data.meshes.remove(me)
+    bmesh.ops.triangulate(bm, faces=bm.faces[:])
+    bm.verts.ensure_lookup_table()
+    bm.faces.ensure_lookup_table()
+    tree = BVHTree.FromBMesh(bm)
+    src = bpy.data.meshes.new(prefix + "fsrc")
+    tmp = bm.copy()
+    tmp.to_mesh(src)
+    tmp.free()
+    ob = bpy.data.objects.new(prefix + "fsrc", src)
+    bpy.context.scene.collection.objects.link(ob)
+    rm = ob.modifiers.new("remesh", "REMESH")
+    rm.mode = "VOXEL"
+    rm.voxel_size = voxel
+    rm.adaptivity = 0.0
+    sm = ob.modifiers.new("smooth", "LAPLACIANSMOOTH")
+    sm.iterations = smooth
+    sm.lambda_factor = 1.0
+    sm.use_volume_preserve = True
+    ev = ob.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    me = bpy.data.meshes.new_from_object(ev)
+    bpy.data.objects.remove(ob)
+    bpy.data.meshes.remove(src)
+    rest, pv, vmat = [], [], []
+    for v in me.vertices:
+        loc, _, idx, _ = tree.find_nearest(v.co)
+        f = bm.faces[idx]
+        a, b, c = (x.co for x in f.verts)
+        ra, rb, rc = (Vector(x[rest_l]) for x in f.verts)
+        pa, pb, pc = (Vector(x[pv_l]) for x in f.verts)
+        rest.extend(barycentric_transform(loc, a, b, c, ra, rb, rc))
+        pv.extend(barycentric_transform(loc, a, b, c, pa, pb, pc))
+        vmat.append(f.material_index)
+    bm.free()
+    for m in mats:
+        me.materials.append(m)
+    me.polygons.foreach_set("material_index", [vmat[p.vertices[0]] for p in me.polygons])
+    me.polygons.foreach_set("use_smooth", [True] * len(me.polygons))
+    me.attributes.new("rest", "FLOAT_VECTOR", "POINT").data.foreach_set("vector", rest)
+    me.attributes.new("pv", "FLOAT_VECTOR", "POINT").data.foreach_set("vector", pv)
+    obj = bpy.data.objects.new(prefix + name, me)
+    link(obj)
+    return obj

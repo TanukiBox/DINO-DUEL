@@ -159,8 +159,12 @@ class Theropod:
         eye = self._head(Mh, P, prefix)
         self._legs(M0, P, prefix, sk)
         self._arms(fwd_M[2], P, prefix, sk)
+        if C.REAL:
+            self._real_detail(fwd_M, Mh, rings, prefix)
         if sk:
-            sk.build(prefix + "body", up_hint, fuse=C.FUSE_VOXEL if C.SKIN == "fuse" else None)
+            sk.build(prefix + "body", up_hint, fuse=C.FUSE_VOXEL if (C.SKIN == "fuse" and not C.REAL) else None)
+        if C.REAL and C.SKIN == "fuse":
+            C.fuse_prefix(prefix)       # 体・脚・腕・頭・あごを、つなぎ目のない1つの形に
 
         hd = s["head"]
         jx = hd["skull"][-1][0] * 0.82
@@ -172,6 +176,27 @@ class Theropod:
             "eye": eye,                       # 手前の目の位置（ドット絵に目を描き足す場所）
             "eye_closed": bool(P["eye_closed"]),
         }
+
+    # ------------------------------------------------------------------
+    def _real_detail(self, fwd_M, Mh, rings, prefix):
+        """リアル寄りの見た目だけ：筋肉のふくらみ（肩・首・あごの筋肉。体と溶け合わせる）と、背中のウロコの列"""
+        s = self.s
+        for side in (-1, 1):
+            Mc = fwd_M[2]
+            C.ellipsoid(Mc @ Vector((0.0, side * 0.2, -0.12)), (0.2, 0.1, 0.17), self.m_limb, rot=Mc.to_3x3(), name=prefix + "mus")
+            Mn = fwd_M[4]
+            C.ellipsoid(Mn @ Vector((-0.08, side * 0.12, -0.03)), (0.18, 0.1, 0.15), self.m_limb, rot=Mn.to_3x3(), name=prefix + "mus")
+            sk0 = s["head"]["skull"][1]
+            C.ellipsoid(Mh @ Vector((sk0[0], side * sk0[1] * 0.72, sk0[4] + 0.01)), (0.1, 0.06, 0.09), self.m_skull, rot=Mh.to_3x3(),
+                        name=prefix + "mus")
+        # 背中のウロコの列（首から しっぽの中ほどまで）
+        m_sc = C.toon(s["colors"].get("stripe", s["colors"]["base"]), name="scute_" + s["key"])
+        for i, (p, side_v, up, ry, rt, rb, u) in enumerate(rings):
+            if i % 2 or not (0.3 < u < 0.97):
+                continue
+            h = 0.03 * min(1.2, max(0.4, rt / 0.2))
+            top = p + up * rt * 0.97
+            C.cone(top - up * 0.015, top + up * h, h * 0.75, m_sc, name=prefix + "scute", segs=6, noline=True)
 
     # ------------------------------------------------------------------
     def _head(self, Mh, P, prefix):
@@ -253,6 +278,14 @@ class Theropod:
         ex, ez = hd["eye"]
         _, ry, rt, rb, zc = sk_at(ex, sk)
         eye = C.facing_eye(Mh, (ex, -ry * 0.9, zc + ez), (ex, ry * 0.9, zc + ez))
+        if C.REAL:
+            # リアル寄りの見た目では、3Dの目を作る（ドット絵の目は描き足さない）
+            import real
+            Rn = R.normalized()
+            hs = self.s["head"].get("scale", 1.0)
+            for side in (-1, 1):
+                real.eye(Mh @ Vector((ex, side * ry * 0.8, zc + ez)), Rn @ Vector((0, side, 0)), hd.get("eye_r", 0.04) * hs,
+                         P["eye_closed"], self.s["colors"].get("eye", "#f2c050"), self.m_skull, prefix, Rn)
         for side in (-1, 1):
             far = side > 0
             # まゆの骨：目の上のふくらみ（形だけ。色は頭と同じ。眉の線はドット絵で描く）

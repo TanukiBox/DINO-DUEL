@@ -113,7 +113,9 @@ class Quadruped:
         eye = self._head(Mh, P, prefix)
         self._legs(M0, fwd_M[3], P, prefix, sk)
         if sk:
-            sk.build(prefix + "body", up_hint, fuse=C.FUSE_VOXEL if C.SKIN == "fuse" else None)
+            sk.build(prefix + "body", up_hint, fuse=C.FUSE_VOXEL if (C.SKIN == "fuse" and not C.REAL) else None)
+        if C.REAL and C.SKIN == "fuse":
+            C.fuse_prefix(prefix)       # 体・脚・腕・頭・あごを、つなぎ目のない1つの形に
         return {
             "mouth": Mh @ Vector((hd["skull"][-1][0] * 0.9, 0, -0.06)),
             "head": Mh @ Vector((hd["skull"][-1][0] * 0.4, 0, 0.05)),
@@ -241,6 +243,12 @@ class Quadruped:
 
         ex, ez = hd["eye"]
         _, ry, rt, rb, zc = at(ex, sk)
+        if C.REAL:
+            import real
+            Rn = R.normalized()
+            for side in (-1, 1):
+                real.eye(Mh @ Vector((ex, side * ry * 0.82, zc + ez)), Rn @ Vector((0, side, 0)), hd.get("eye_r", 0.035) * hd.get("scale", 1.0),
+                         P["eye_closed"], self.s["colors"].get("eye", "#6a3a1c"), self.m_skull, prefix, Rn)
         return C.facing_eye(Mh, (ex, -ry * 0.92, zc + ez), (ex, ry * 0.92, zc + ez))
 
     # ------------------------------------------------------------------
