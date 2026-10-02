@@ -36,24 +36,23 @@ from pipeline.blender_path import find_blender
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(ROOT, "output", "model-options")
 KEYS = ["tyranno", "triceratops"]
-MODES = [("1", "", "1 今の方式"), ("2", "full", "2 スキン（全部）"), ("3", "limbs", "3 スキン（脚と腕）"), ("4", "fuse", "4 スキン＋溶け合わせ"),
-         ("5", "limbs+fit", "5 参考画像に合わせた形")]
-REFS = {"tyranno": "trex.png", "triceratops": "tricera.png"}
+MODES = [("1", "+prev", "1 前の形"), ("2", "", "2 新しい形・管"), ("3", "limbs", "3 新しい形・スキン"), ("4", "fuse", "4 新しい形・溶合")]
+REFS = {"tyranno": "ky_side_mask.png", "triceratops": "tricera.png"}
 BG = (110, 165, 215, 255)
 
 
 def renders_dir(mode):
-    return os.path.join(build.BUILD, "m_" + (mode or "base")[:2] + ("f" if mode.endswith("+fit") else ""))     # 短い名前（Windows のファイルの場所の長さの上限 260文字 をこえないように）
+    return os.path.join(build.BUILD, "m_" + (mode.split("+")[0] or "base")[:2] + ("p" if mode.endswith("+prev") else ""))     # 短い名前（Windows のファイルの場所の長さの上限 260文字 をこえないように）
 
 
 def render(mode):
     os.makedirs(renders_dir(mode), exist_ok=True)    # 先に作っておく（Blender からは新しいフォルダを作れないことがある）
     cmd = [find_blender(), "-b", "--factory-startup", "--python-exit-code", "1", "-P", os.path.join(ROOT, "blender", "render_all.py"), "--",
            "--out", renders_dir(mode), "--jobs", "dinos", "--only", ",".join(KEYS), "--profile", "--no-model"]
-    if mode:
+    if mode.split("+")[0]:
         cmd += ["--skin", mode.split("+")[0]]
-    if mode.endswith("+fit"):
-        cmd += ["--fit"]
+    if mode.endswith("+prev"):
+        cmd += ["--prev"]
     p = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace")
     if p.returncode != 0:
         print(p.stdout[-3000:])

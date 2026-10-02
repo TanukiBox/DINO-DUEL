@@ -82,11 +82,11 @@ def main():
     p.add_argument("--skin", default="", help="体・脚・腕の作り方（full / limbs / fuse。common.py の SKIN）")
     p.add_argument("--profile", action="store_true", help="真横からの影絵も撮る（参考画像と比べる用）")
     p.add_argument("--no-model", action="store_true", help="3Dモデル（art/models/）を書きかえない")
-    p.add_argument("--fit", action="store_true", help="ティラノを、参考画像に合わせた体と脚にする（dinos.TYRANNO_FIT）")
+    p.add_argument("--prev", action="store_true", help="ティラノを前の形にする（dinos.TYRANNO_PREV。比べる用）")
     a = p.parse_args(argv)
     C.SKIN = a.skin or False
-    if a.fit:
-        dinos.use_fit()
+    if a.prev:
+        dinos.use_prev()
     global SAVE_MODELS
     SAVE_MODELS = not a.no_model
     os.makedirs(a.out, exist_ok=True)
