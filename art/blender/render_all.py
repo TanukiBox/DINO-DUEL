@@ -59,6 +59,8 @@ def render_species(key, out, test=None):
     hc = an["head"]
     face_cam = C.dino_camera(target=(hc.x - 0.04, hc.y, hc.z - 0.03), ortho=1.05, name="CamFace")
     C.render_to(os.path.join(out, "face_%s.png" % key))
+    if "eye" in an:
+        meta["face_eye"] = C.to_pixel(face_cam, an["eye"], FACE)     # 顔アイコンにも、あとで目を描き足す
     with open(os.path.join(out, "meta_%s.json" % key), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False)
 

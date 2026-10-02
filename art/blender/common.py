@@ -160,6 +160,13 @@ def dino_camera(target=CAM_TARGET, ortho=ORTHO, az=CAM_AZ, el=CAM_EL, name="Cam"
     return ob
 
 
+def facing_eye(Mh, near, far):
+    """頭の左右の目（頭の中での位置 near=手前・far=奥）のうち、カメラの方を向いている方の位置。
+    ふつうは手前の目。倒れて頭が裏返ったコマでは奥の目になる（描く目はいつも1つだけで、消えない）"""
+    n = (Mh.to_3x3() @ Vector((0, -1, 0))).normalized()
+    return Mh @ Vector(near) if n.dot(cam_dir()) >= 0 else Mh @ Vector(far)
+
+
 def front_camera(target=(0, 0, 0), ortho=2.0, name="CamFront"):
     """正面から見るカメラ（エフェクト用。-Y の方向から見る）"""
     return dino_camera(target, ortho, az=0.0, el=0.0, name=name)

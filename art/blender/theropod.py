@@ -234,7 +234,7 @@ class Theropod:
         # まゆの骨・小さな角・鼻の穴（手前と奥の両方）。目は3Dでは作らず、手前の目の位置だけを返す
         ex, ez = hd["eye"]
         _, ry, rt, rb, zc = sk_at(ex, sk)
-        eye = Mh @ Vector((ex, -ry * 0.9, zc + ez))
+        eye = C.facing_eye(Mh, (ex, -ry * 0.9, zc + ez), (ex, ry * 0.9, zc + ez))
         for side in (-1, 1):
             far = side > 0
             # まゆの骨：目の上のふくらみ（形だけ。色は頭と同じ。眉の線はドット絵で描く）
@@ -314,4 +314,4 @@ class Theropod:
                 C.mesh_object(prefix + "arm", bm, mat)
             for k in range(ar["fingers"]):
                 d = (Rc @ Vector((0.7, side * (k - 0.5) * 0.4, -0.7))).normalized()
-                C.cone(wr, wr + d * ar["claw"], 0.014, self.m_claw, name=prefix + "finger", noline=True)
+                C.cone(wr, wr + d * ar["claw"], ar.get("claw_r", 0.014), self.m_claw, name=prefix + "finger", noline=True)

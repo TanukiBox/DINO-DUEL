@@ -21,7 +21,7 @@ W = "#fff8ea"        # ハイライト
 Y = "#f2c050"        # 縁取り（肉食）
 
 # ゲームの絵に使う案（A〜D）。None のあいだは、まだ選ばれていない（build.py は目を描かない）
-CHOSEN = None
+CHOSEN = "A"      # 2026-10-02 に A に決定
 
 # 4つの案。左から「ゲームのような親しみやすい目」→「リアル寄りの鋭い目」
 OPTIONS = {
@@ -125,7 +125,8 @@ def center(pat):
 
 
 def stamp(img, eye, option, diet, skin, closed=False):
-    """img（ドット絵1コマ）の eye=(x, y)（ドット座標）に目を描く。その場で書きかえる"""
+    """img（ドット絵1コマ）の eye=(x, y)（ドット座標）に目を描いた、新しい絵を返す"""
+    img = img.copy()
     if not eye:
         return img
     pat = pattern(option, diet, closed)

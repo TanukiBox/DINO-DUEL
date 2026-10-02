@@ -223,7 +223,7 @@ class Quadruped:
 
         ex, ez = hd["eye"]
         _, ry, rt, rb, zc = at(ex, sk)
-        return Mh @ Vector((ex, -ry * 0.92, zc + ez))
+        return C.facing_eye(Mh, (ex, -ry * 0.92, zc + ez), (ex, ry * 0.92, zc + ez))
 
     # ------------------------------------------------------------------
     def _limb(self, top, ball, lens, radii, ma, fwd, mat, prefix, nm, thigh=False):

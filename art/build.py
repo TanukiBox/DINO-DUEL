@@ -84,8 +84,8 @@ def convert_dinos(made, manifest):
             got = [pixelate.pixelate(os.path.join(RENDERS, "dino_%s_%s_%d.png" % (key, name, i)), size) for i in range(a["n"])]
             # 目：ドット絵にしたあとで、頭の骨から計算した目の位置に、決まった形の目を描き足す（pipeline/eyes.py）
             if eyes.CHOSEN:
-                for im, pt in zip(got, a["points"]):
-                    eyes.stamp(im, pt.get("eye"), eyes.CHOSEN, meta.get("diet", "carnivore"), meta.get("skin"), pt.get("eye_closed", False))
+                got = [eyes.stamp(im, pt.get("eye"), eyes.CHOSEN, meta.get("diet", "carnivore"), meta.get("skin"), pt.get("eye_closed", False))
+                       for im, pt in zip(got, a["points"])]
             frames += got
             info = {"s": start, "n": a["n"], "ms": a["ms"], "pts": a["points"]}
             for k in ("loop", "impact", "windup", "strike", "after", "recover"):
@@ -99,6 +99,8 @@ def convert_dinos(made, manifest):
         pixelate.save_png(strip(frames, size), os.path.join(OUT, "dinos", key + ".png"))
         made.append("dinos/%s.png" % key)
         face = pixelate.pixelate(os.path.join(RENDERS, "face_%s.png" % key), (40, 40))
+        if eyes.CHOSEN:
+            face = eyes.stamp(face, meta.get("face_eye"), eyes.CHOSEN, meta.get("diet", "carnivore"), meta.get("skin"))
         pixelate.save_png(face, os.path.join(OUT, "dinos", key + "_face.png"))
         made.append("dinos/%s_face.png" % key)
         manifest["dinos"][key] = {"sheet": ver(URL + "dinos/%s.png" % key), "face": ver(URL + "dinos/%s_face.png" % key),
@@ -132,6 +134,8 @@ def main():
     a = p.parse_args()
     if not eyes.CHOSEN:
         print("※ 目の案がまだ選ばれていません（pipeline/eyes.py の CHOSEN）。目なしで書き出します。")
+    else:
+        print("目の案:", eyes.OPTIONS[eyes.CHOSEN]["name"])
     if not a.skip_render:
         render(a.jobs, a.only)
     made = []

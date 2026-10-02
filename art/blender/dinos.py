@@ -80,7 +80,8 @@ TYRANNO = dict(
         r_toe=(0.065, 0.05, 0.03),
         near_ball=(0.12, 0.28), far_ball=(-0.32, 0.28),
     ),
-    arm=dict(socket=(0.08, 0.2, -0.2), upper=0.12, fore=0.10, r=(0.045, 0.032), fingers=2, claw=0.05),
+    # 腕：本物も短いが、ゲームで見えるよう少し大きめ（2回目の確認で「前脚が小さすぎる」→ 長さ約1.9倍・太さ約1.6倍）
+    arm=dict(socket=(0.10, 0.21, -0.26), upper=0.24, fore=0.19, r=(0.075, 0.055), fingers=2, claw=0.085, claw_r=0.024),
     colors=dict(base="#b4622e", belly="#fbe8a8", stripe="#5a2e1c", far="#8a4524", eye="#f2c050", pupil="#2e1a14",
                 teeth="#fff8ea", claw="#3e3a48", mouth="#7a1a1a", tongue="#e8908a", brow="#5a2e1c", horn="#8a4524"),
     stripes=dict(freq=13, w=0.34, u=(0.08, 0.8)),

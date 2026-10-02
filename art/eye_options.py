@@ -68,9 +68,7 @@ def main():
         for opt in eyes.OPTIONS:
             done = []
             for im, pt, closed in frames:
-                f = im.copy()
-                eyes.stamp(f, pt, opt, meta["diet"], meta["skin"], closed)
-                done.append(f)
+                done.append(eyes.stamp(im, pt, opt, meta["diet"], meta["skin"], closed))
             sheets[key][opt] = done
             name = "%s_%s.png" % (key, opt)
             pixelate.save_png(build.strip(done, size), os.path.join(OUT, name))
