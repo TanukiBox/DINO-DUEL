@@ -19,8 +19,9 @@ sys.path.insert(0, HERE)
 import common as C      # noqa: E402
 import dinos            # noqa: E402
 import theropod         # noqa: E402
+import quadruped        # noqa: E402
 
-TYPES = {"theropod": theropod.Theropod}
+TYPES = {"theropod": theropod.Theropod, "quadruped": quadruped.Quadruped}
 FACE = (40, 40)
 
 
@@ -30,7 +31,8 @@ def render_species(key, out, test=None):
     C.reset_scene(C.FRAME)
     cam = C.dino_camera()
     body = TYPES[spec["type"]](spec)
-    meta = {"frame": list(C.FRAME), "anims": {}, "moves": dinos.MOVES.get(key, {})}
+    meta = {"frame": list(C.FRAME), "anims": {}, "moves": dinos.MOVES.get(key, {}), "diet": spec.get("diet", "carnivore"),
+            "ready": spec.get("ready", True), "skin": spec["colors"]["base"]}
     anims = dinos.ANIMS[key]
     if test:
         for name, i in test:
@@ -42,7 +44,7 @@ def render_species(key, out, test=None):
         for i, pose in enumerate(a["frames"]):
             an = body.build(pose)
             C.render_to(os.path.join(out, "dino_%s_%s_%d.png" % (key, name, i)))
-            pts.append({k: C.to_pixel(cam, v) for k, v in an.items()})
+            pts.append({k: (C.to_pixel(cam, v) if hasattr(v, "x") else v) for k, v in an.items()})
         info = {k: v for k, v in a.items() if k != "frames"}
         info["n"] = len(a["frames"])
         info["points"] = pts

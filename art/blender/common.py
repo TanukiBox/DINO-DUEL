@@ -154,7 +154,8 @@ def dino_camera(target=CAM_TARGET, ortho=ORTHO, az=CAM_AZ, el=CAM_EL, name="Cam"
     ob = link(bpy.data.objects.new(name, cd))
     t = Vector(target)
     ob.location = t + cam_dir(az, el) * 20.0
-    ob.rotation_euler = (t - ob.location).to_track_quat("-Z", "Y" if abs(el) > 89 else "Z").to_euler()
+    # カメラの -Z を見る向きに、Y（画面の上）を世界の上へ向ける（地面が画面で水平に写る）
+    ob.rotation_euler = (t - ob.location).to_track_quat("-Z", "Y").to_euler()
     bpy.context.scene.camera = ob
     return ob
 

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DINO DUEL 目の案の比較</title>
+<style>
+  body { margin: 0; padding: 10px 6px 40px; background: #f4e6c8; color: #2b1b12; font-family: sans-serif; }
+  h1 { font-size: 17px; margin: 4px 0 6px; }
+  p.note { font-size: 13px; line-height: 1.5; margin: 0 0 10px; }
+  h2 { font-size: 15px; margin: 18px 0 6px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(calc(var(--cw) * var(--ps) * 1px + 4px), calc(50% - 3px)), 1fr)); gap: 6px; }
+  .cell { background: #fff8e8; border: 2px solid #2b1b12; border-radius: 10px; overflow: hidden; }
+  .cell b { display: block; font-size: 12px; padding: 3px 5px; background: #2b1b12; color: #fff8e8; white-space: nowrap; overflow: hidden; }
+  .stage { display: flex; justify-content: flex-end; align-items: flex-end; height: calc(var(--ch) * var(--ps) * 1px); overflow: hidden;
+           background: linear-gradient(#8fd6c8 0%, #d8f0d0 62%, #5f9a3c 62.2%, #4a8030 100%); }
+  .pix { flex: 0 0 auto; width: calc(var(--fw) * var(--ps) * 1px); height: calc(var(--fh) * var(--ps) * 1px);
+         margin-bottom: calc(var(--gy, 0) * var(--ps) * -1px + 6px);
+         margin-right: calc(var(--dx) * var(--ps) * -1px);   /* 頭の側（右）をそろえる。せまいときは、しっぽの先が切れる */
+         background-repeat: no-repeat; image-rendering: pixelated;
+         background-size: calc(var(--fw) * var(--n) * var(--ps) * 1px) calc(var(--fh) * var(--ps) * 1px);
+         background-position: calc(var(--f) * var(--fw) * var(--ps) * -1px) 0; }
+  .flip .pix { transform: scaleX(-1); }
+  .flip .stage { justify-content: flex-start; }
+  .flip .pix { margin-right: 0; margin-left: calc(var(--dx) * var(--ps) * -1px); }
+  .zoom { display: flex; justify-content: center; background: #6ea5d7; padding: 6px 0; }
+  .zoom canvas { image-rendering: pixelated; width: 100%; max-width: 240px; }
+  label { font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>恐竜の目の案（A〜D）</h1>
+<p class="note">恐竜の大きさは、<b>この画面でバトルをしたときと同じ</b>です（1ドット = <span id="ps"></span>px）。<br>
+左の A ほどゲームらしい親しみやすい目、右の D ほどリアル寄りの鋭い目です。肉食（ティラノ）は黄色い縁取りと目の上の出っ張り、草食（トリケラトプス）は丸く穏やかな目です。<br>
+<label><input type="checkbox" id="flip"> 相手側（左右反転）で見る</label></p>
+<div id="rows"></div>
+<script src="../art/output/eye-options/index.js"></script>
+<script>
+(function () {
+  'use strict';
+  var D = window.EYE_OPT, OPTS = Object.keys(D.options);
+  // バトル画面と同じ1ドットの大きさ（js/game/pix.js の P.fit と、バトルの場の大きさの計算と同じ）
+  function fit() {
+    var W = window.innerWidth, H = window.innerHeight, dpr = window.devicePixelRatio || 1;
+    var k = Math.min(0.48 * (W - 8) / 112, ((0.5 * H - 32) / 3 - 17) / 62);
+    var ps = Math.max(1, Math.floor(k * dpr)) / dpr;
+    document.documentElement.style.setProperty('--ps', ps);
+    document.getElementById('ps').textContent = (Math.round(ps * 100) / 100) + ' ';
+  }
+  fit();
+  window.addEventListener('resize', fit);
+  document.getElementById('flip').addEventListener('change', function (e) { document.body.classList.toggle('flip', e.target.checked); });
+
+  var ROWS = [
+    { key: 'tyranno', title: 'ティラノサウルス（待機）', play: ['idle'] },
+    { key: 'tyranno', title: 'ティラノサウルス（クラッシュファング → 被弾）', play: ['bite', 'hit'] },
+    { key: 'tyranno', title: 'ティラノサウルス（暴君のおたけび）', play: ['roar'] },
+    { key: 'triceratops', title: 'トリケラトプス（待機）', play: ['idle'] }
+  ];
+  var live = [];
+  var root = document.getElementById('rows');
+  ROWS.forEach(function (r) {
+    var d = D.dinos[r.key];
+    var h = document.createElement('h2'); h.textContent = r.title; root.appendChild(h);
+    var g = document.createElement('div'); g.className = 'grid'; root.appendChild(g);
+    // 絵が入っている範囲（全部のコマ）だけを見せる：スマホでも2案ずつ横に並ぶように
+    var bx = r.play.reduce(function (b, n) { var q = d.anims[n].box; return [Math.min(b[0], q[0]), Math.min(b[1], q[1]), Math.max(b[2], q[2]), Math.max(b[3], q[3])]; }, [999, 999, 0, 0]);
+    var cw = bx[2] - bx[0] + 4;
+    g.style.setProperty('--cw', cw);
+    g.style.setProperty('--ch', Math.max(70, bx[3] - bx[1] + 10));
+    g.style.setProperty('--dx', d.w - bx[2] - 2);
+    // 1回分のコマの並び（待機以外は、最後に待機を少しはさんでくり返す）
+    var seq = [];
+    r.play.forEach(function (name) {
+      var a = d.anims[name];
+      for (var i = 0; i < a.n; i++) seq.push({ f: a.s + i, ms: a.ms[i] });
+    });
+    if (r.play[0] !== 'idle') { var id = d.anims.idle; for (var j = 0; j < 8; j++) seq.push({ f: id.s + (j % id.n), ms: id.ms[j % id.n] }); }
+    OPTS.forEach(function (o) {
+      var c = document.createElement('div'); c.className = 'cell';
+      c.innerHTML = '<b>' + D.options[o] + '</b><div class="stage"><div class="pix" style="--fw:' + d.w + ';--fh:' + d.h + ';--n:' + d.n +
+        ';--gy:' + (d.gy || 0) + ';--f:' + seq[0].f + ';background-image:url(../' + d.sheets[o] + ')"></div></div>';
+      g.appendChild(c);
+      live.push({ el: c.querySelector('.pix'), seq: seq });
+    });
+  });
+  // 拡大（頭のまわり・6倍）
+  var h = document.createElement('h2'); h.textContent = '拡大（頭のまわり・待機の1コマ目）'; root.appendChild(h);
+  var g = document.createElement('div'); g.className = 'grid'; g.style.gridTemplateColumns = 'repeat(auto-fit, minmax(150px, 1fr))'; root.appendChild(g);
+  OPTS.forEach(function (o) {
+    var c = document.createElement('div'); c.className = 'cell';
+    c.innerHTML = '<b>' + D.options[o] + '</b>';
+    ['tyranno', 'triceratops'].forEach(function (k) {
+      var d = D.dinos[k], e = d.eye0, z = document.createElement('div'); z.className = 'zoom';
+      var cv = document.createElement('canvas'); cv.width = 40; cv.height = 26; z.appendChild(cv); c.appendChild(z);
+      var im = new Image();
+      im.onload = function () {
+        var x = cv.getContext('2d');
+        x.fillStyle = '#6ea5d7'; x.fillRect(0, 0, 40, 26);
+        x.drawImage(im, Math.round(e[0]) - 22, Math.round(e[1]) - 12, 40, 26, 0, 0, 40, 26);
+      };
+      im.src = '../' + d.sheets[o];
+    });
+    g.appendChild(c);
+  });
+
+  var t0 = performance.now();
+  function tick(now) {
+    live.forEach(function (s) {
+      var tot = 0; s.seq.forEach(function (q) { tot += q.ms; });
+      var t = (now - t0) % tot, f = s.seq[0].f;
+      for (var i = 0; i < s.seq.length; i++) { if (t < s.seq[i].ms) { f = s.seq[i].f; break; } t -= s.seq[i].ms; }
+      s.el.style.setProperty('--f', f);
+    });
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

@@ -3,6 +3,7 @@
 骨組み（関節の位置）を数字で持ち、ポーズの数字（体の傾き・首・頭・あご・しっぽ・腕）から関節の位置を計算して、
 そのたびに形を作り直す。体は しっぽの先 → 腰 → おなか → 胸 → 首 を1本の管でつなぐので、つなぎ目がない。
 頭と下あごは別の部品（あごは ちょうつがい で開く）。脚は足の裏を地面に置いたまま、ひざの位置を計算する（IK）。
+目は3Dでは作らない。手前の目の位置だけを毎コマ計算して返し、ドット絵にしたあとで決まった形のドットで描き足す（pipeline/eyes.py）。
 
 座標：x = 前（頭の向き）、z = 上、y = 横（カメラは -y の側。手前の脚が y < 0）。
 """
@@ -98,7 +99,7 @@ class Theropod:
         P.update(pose)
         C.remove_objects(prefix)
         hx, hz = s["hips"]
-        M0 = Tr((hx + P["root_dx"], 0, hz + P["root_dz"])) @ Ry(-P["root_pitch"]) @ Rx(P["root_roll"])
+        M0 = Tr((hx + P["root_dx"], 0, hz + P["root_dz"])) @ Ry(-(s.get("pitch", 0.0) + P["root_pitch"])) @ Rx(P["root_roll"])
 
         # --- 前（おなか → 首）---
         fwd_M = [M0]
@@ -139,7 +140,7 @@ class Theropod:
         bm, pv = C.loft(rings, 18, e_bot=0.92)
         C.mesh_object(prefix + "body", bm, self.m_body, pv=pv)
 
-        self._head(Mh, P, prefix)
+        eye = self._head(Mh, P, prefix)
         self._legs(M0, P, prefix)
         self._arms(fwd_M[2], P, prefix)
 
@@ -150,6 +151,8 @@ class Theropod:
             "head": Mh @ Vector((hd["skull"][-1][0] * 0.45, 0, 0.05)),
             "body": fwd_M[1].translation.copy(),
             "feet": Vector((s["hips"][0] + 0.05, 0, 0.0)),
+            "eye": eye,                       # 手前の目の位置（ドット絵に目を描き足す場所）
+            "eye_closed": bool(P["eye_closed"]),
         }
 
     # ------------------------------------------------------------------
@@ -228,20 +231,14 @@ class Theropod:
                 b = Vector((x - jx, side * jry * 0.78, jzc + jrt * 0.7))
                 C.cone(Mj @ b, Mj @ (b + Vector((0.004, 0, L))), hd.get("tooth_r", 0.013) * 0.9, self.m_teeth, name=prefix + "tooth", noline=True)
 
-        # 目・まゆの骨・小さな角・鼻の穴（手前と奥の両方）
+        # まゆの骨・小さな角・鼻の穴（手前と奥の両方）。目は3Dでは作らず、手前の目の位置だけを返す
         ex, ez = hd["eye"]
         _, ry, rt, rb, zc = sk_at(ex, sk)
+        eye = Mh @ Vector((ex, -ry * 0.9, zc + ez))
         for side in (-1, 1):
             far = side > 0
-            yy = side * ry * 0.86
-            if P["eye_closed"]:
-                C.ellipsoid(Mh @ Vector((ex, yy * 1.02, zc + ez)), (0.03, 0.01, 0.005), self.m_pupil, rot=R, name=prefix + "eye", noline=True)
-            else:
-                er = hd.get("eye_r", 0.032)
-                C.ellipsoid(Mh @ Vector((ex, yy, zc + ez)), (er, er * 0.7, er * 0.85), self.m_eye, rot=R, name=prefix + "eye", noline=True)
-                C.ellipsoid(Mh @ Vector((ex + 0.008, yy * 1.08, zc + ez)), (er * 0.28, 0.008, er * 0.78), self.m_pupil, rot=R, name=prefix + "pupil", noline=True)
-            # まゆの骨：目の上に張り出す（にらんだ顔）
-            C.ellipsoid(Mh @ Vector((ex - 0.005, side * ry * 0.78, zc + ez + 0.045)), (0.1, 0.05, 0.03), self.m_brow,
+            # まゆの骨：目の上のふくらみ（形だけ。色は頭と同じ。眉の線はドット絵で描く）
+            C.ellipsoid(Mh @ Vector((ex - 0.005, side * ry * 0.78, zc + ez + 0.045)), (0.1, 0.05, 0.03), self.m_skull,
                         rot=R @ Matrix.Rotation(math.radians(-12), 3, "Y"), name=prefix + "brow")
             for hz in hd.get("horns", []):
                 hx2, hy2, hh = hz
@@ -251,6 +248,7 @@ class Theropod:
             _, nry, nrt, nrb, nzc = sk_at(nx, sk)
             if not far:
                 C.ellipsoid(Mh @ Vector((nx, side * nry * 0.75, nzc + nrt * 0.35)), (0.02, 0.012, 0.01), self.m_pupil, rot=R, name=prefix + "nose", noline=True)
+        return eye
 
     # ------------------------------------------------------------------
     def _legs(self, M0, P, prefix):

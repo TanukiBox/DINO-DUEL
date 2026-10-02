@@ -24,7 +24,7 @@ import time
 from PIL import Image
 
 from pipeline.blender_path import find_blender
-from pipeline import pixelate, fx2d
+from pipeline import pixelate, fx2d, eyes
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 BUILD = os.path.join(ROOT, "build")          # 途中のファイル（Git には入れない）
@@ -75,11 +75,17 @@ def convert_dinos(made, manifest):
     for meta_path in sorted(glob.glob(os.path.join(RENDERS, "meta_*.json"))):
         key = os.path.basename(meta_path)[5:-5]
         meta = json.load(open(meta_path, encoding="utf-8"))
+        if not meta.get("ready", True):
+            continue          # まだゲームに出さない恐竜（dinos.py の ready=False）
         size = tuple(meta["frame"])
         frames, anims = [], {}
         for name, a in meta["anims"].items():
             start = len(frames)
             got = [pixelate.pixelate(os.path.join(RENDERS, "dino_%s_%s_%d.png" % (key, name, i)), size) for i in range(a["n"])]
+            # 目：ドット絵にしたあとで、頭の骨から計算した目の位置に、決まった形の目を描き足す（pipeline/eyes.py）
+            if eyes.CHOSEN:
+                for im, pt in zip(got, a["points"]):
+                    eyes.stamp(im, pt.get("eye"), eyes.CHOSEN, meta.get("diet", "carnivore"), meta.get("skin"), pt.get("eye_closed", False))
             frames += got
             info = {"s": start, "n": a["n"], "ms": a["ms"], "pts": a["points"]}
             for k in ("loop", "impact", "windup", "strike", "after", "recover"):
@@ -124,6 +130,8 @@ def main():
     p.add_argument("--only", default="")
     p.add_argument("--jobs", default="dinos,fx")
     a = p.parse_args()
+    if not eyes.CHOSEN:
+        print("※ 目の案がまだ選ばれていません（pipeline/eyes.py の CHOSEN）。目なしで書き出します。")
     if not a.skip_render:
         render(a.jobs, a.only)
     made = []
