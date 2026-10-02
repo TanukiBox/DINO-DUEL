@@ -98,5 +98,5 @@ node tools/sim.js endgame   # 4. はじめからマスター優勝・レジェ�
 ## 公開のしかた（GitHub Pages・無料）
 - リポジトリは GitHub の組織 **TanukiBox**（TanukiBox/DINO-DUEL）。
 - Settings → Pages → Source を **Deploy from a branch**、Branch を **main** / **(root)**。main に push すると1〜2分で https://tanukibox.github.io/DINO-DUEL/ が更新される。
-- 更新がスマホに出ないときは、`index.html` の `?v=13` の数字を1つ上げる（css と js すべて）。
+- 更新がスマホに出ないときは、`index.html` の `?v=14` の数字を1つ上げる（css と js すべて）。
 - Tanuki Box のトップページ（TanukiBox/tanukibox.github.io）の `games.js` に DINO DUEL の箱を追加済み。絵は `assets/games/dino-duel*.png / .jpg`。
