@@ -21,11 +21,12 @@ import dinos            # noqa: E402
 import theropod         # noqa: E402
 import quadruped        # noqa: E402
 
+SAVE_MODELS = True   # --no-model のときは 3Dモデル（art/models/）を書きかえない（比べる用の試作）
 TYPES = {"theropod": theropod.Theropod, "quadruped": quadruped.Quadruped}
 FACE = (40, 40)
 
 
-def render_species(key, out, test=None):
+def render_species(key, out, test=None, profile=False):
     """test = [(動き, コマ), ...] のときは、そのコマだけ描く（形を確かめる用。meta は書かない）"""
     spec = dinos.SPECIES[key]
     C.reset_scene(C.FRAME)
@@ -51,10 +52,16 @@ def render_species(key, out, test=None):
         meta["anims"][name] = info
     # 顔（アイコン用）：待機の1コマ目を、頭に寄って撮る
     an = body.build(anims["idle"]["frames"][0])
+    if profile:
+        # 真横・水平から撮った影絵（参考画像と重ねて、形のずれを測る用）
+        C.dino_camera(az=0.0, el=0.0, name="CamProfile")
+        C.render_to(os.path.join(out, "profile_%s.png" % key))
+        C.bpy.context.scene.camera = cam
     # 3Dモデル（待機の1コマ目の形）を .blend で残す：Blender で開いて形や色を確かめられる
     models = os.path.join(HERE, "..", "models")
     os.makedirs(models, exist_ok=True)
-    C.bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(os.path.join(models, key + ".blend")), copy=True, compress=True)
+    if SAVE_MODELS:
+        C.bpy.ops.wm.save_as_mainfile(filepath=os.path.abspath(os.path.join(models, key + ".blend")), copy=True, compress=True)
     C.set_size(FACE)
     hc = an["head"]
     face_cam = C.dino_camera(target=(hc.x - 0.04, hc.y, hc.z - 0.03), ortho=1.05, name="CamFace")
@@ -72,7 +79,16 @@ def main():
     p.add_argument("--jobs", default="dinos,fx")
     p.add_argument("--only", default="")
     p.add_argument("--test", default="", help="形の確認：idle:0,bite:1 のように描くコマ")
+    p.add_argument("--skin", default="", help="体・脚・腕の作り方（full / limbs / fuse。common.py の SKIN）")
+    p.add_argument("--profile", action="store_true", help="真横からの影絵も撮る（参考画像と比べる用）")
+    p.add_argument("--no-model", action="store_true", help="3Dモデル（art/models/）を書きかえない")
+    p.add_argument("--fit", action="store_true", help="ティラノを、参考画像に合わせた体と脚にする（dinos.TYRANNO_FIT）")
     a = p.parse_args(argv)
+    C.SKIN = a.skin or False
+    if a.fit:
+        dinos.use_fit()
+    global SAVE_MODELS
+    SAVE_MODELS = not a.no_model
     os.makedirs(a.out, exist_ok=True)
     jobs = a.jobs.split(",")
     if "dinos" in jobs:
@@ -80,7 +96,7 @@ def main():
         for k in keys:
             print("== 恐竜", k, flush=True)
             test = [(t.split(":")[0], int(t.split(":")[1])) for t in a.test.split(",")] if a.test else None
-            render_species(k, a.out, test)
+            render_species(k, a.out, test, a.profile)
     if "fx" in jobs:
         import fx3d
         print("== エフェクト", flush=True)

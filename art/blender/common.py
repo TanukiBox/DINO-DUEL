@@ -432,3 +432,175 @@ def remove_objects(prefix):
             bpy.data.objects.remove(ob)
             if me is not None and me.users == 0 and isinstance(me, bpy.types.Mesh):
                 bpy.data.meshes.remove(me)
+
+
+# ---------------------------------------------------------------------------
+# スキンモディファイア：関節の点に太さを付け、体・脚・腕をなめらかな1つの形にする
+# ---------------------------------------------------------------------------
+# 体・脚・腕の作り方（render_all.py --skin で切りかえ。比べる用）
+#   False   … 今までどおり（胴体は管、脚は管と玉）
+#   "full"  … 胴体・脚・腕を全部スキンモディファイアで1つに
+#   "limbs" … 胴体は管のまま、脚と腕だけスキンモディファイア
+#   "fuse"  … "limbs" のあと、胴体・脚・腕をボクセルで1つの形に溶け合わせ、なめらかにする
+SKIN = False
+FUSE_VOXEL = 0.013    # "fuse" のボクセルの大きさ（完成の1ドット ≈ 0.034）
+SKIN_FIX = 1 / 0.92   # なめらかにすると約0.92倍に細るので、そのぶん太く置く
+
+
+class Skin:
+    """使い方：add() で鎖（関節の点の並び）を足していき、最後に build()。
+    太さ (r0, r1) は、横向きの鎖（胴体など）なら (横幅, 高さ)、縦向きの鎖（脚など）なら (前後, 横幅)。
+    attach：つなぐ先の鎖の番号（その鎖のいちばん近い点と、この鎖の最初の点をつなぐ）
+    pattern=True の鎖（胴体）にそって、模様用の pv（前後・上下・左右）を計算する"""
+
+    def __init__(self):
+        self.chains = []
+        self.extra = []       # スキン以外で作った形（bmesh）。いっしょに1つにまとめる
+
+    def add(self, pts, radii, mat, attach=None, pattern=False, skin=True):
+        """skin=False の鎖は形を作らず、色分けと模様の計算だけに使う（形は extra に入れた管）"""
+        self.chains.append(dict(pts=[Vector(p) for p in pts], r=[tuple(r) for r in radii], mat=mat, attach=attach,
+                                pattern=pattern, skin=skin))
+        return len(self.chains) - 1
+
+    def build(self, name, up_hint=Vector((0, 0, 1)), branch=1.0, fuse=None):
+        import numpy as np
+        verts, edges, radii, starts = [], [], [], []
+        for c in self.chains:
+            base = len(verts)
+            starts.append(base)
+            if not c["skin"]:
+                continue
+            for k, (p, r) in enumerate(zip(c["pts"], c["r"])):
+                verts.append(tuple(p))
+                radii.append(r)
+                if k:
+                    edges.append((base + k - 1, base + k))
+            if c["attach"] is not None and self.chains[c["attach"]]["skin"]:
+                t = self.chains[c["attach"]]
+                d = [(q - c["pts"][0]).length for q in t["pts"]]
+                edges.append((starts[c["attach"]] + d.index(min(d)), base))
+        roots = [starts[i] for i, c in enumerate(self.chains) if c["skin"] and (c["attach"] is None or not self.chains[c["attach"]]["skin"])]
+        me = self._skin_mesh(name, verts, edges, radii, branch, roots)
+        if self.extra or fuse:
+            bm = bmesh.new()
+            if me is not None:
+                bm.from_mesh(me)
+                bpy.data.meshes.remove(me)
+            for b in self.extra:
+                tmp = bpy.data.meshes.new("tmp")
+                b.to_mesh(tmp)
+                b.free()
+                bm.from_mesh(tmp)
+                bpy.data.meshes.remove(tmp)
+            me = bpy.data.meshes.new(name)
+            bm.to_mesh(me)
+            bm.free()
+            if fuse:
+                ob = bpy.data.objects.new(name + "_fuse", me)
+                bpy.context.scene.collection.objects.link(ob)
+                rm = ob.modifiers.new("remesh", "REMESH")
+                rm.mode = "VOXEL"
+                rm.voxel_size = fuse
+                rm.adaptivity = 0.0
+                sm = ob.modifiers.new("smooth", "LAPLACIANSMOOTH")
+                sm.iterations = 8
+                sm.lambda_factor = 1.0
+                sm.use_volume_preserve = True
+                ev = ob.evaluated_get(bpy.context.evaluated_depsgraph_get())
+                me2 = bpy.data.meshes.new_from_object(ev)
+                bpy.data.objects.remove(ob)
+                bpy.data.meshes.remove(me)
+                me = me2
+        me.name = name
+        return self._finish(name, me, up_hint)
+
+    def _skin_mesh(self, name, verts, edges, radii, branch, roots):
+        if not verts:
+            return None
+        src = bpy.data.meshes.new(name + "_src")
+        src.from_pydata(verts, edges, [])
+        ob = bpy.data.objects.new(name + "_src", src)
+        bpy.context.scene.collection.objects.link(ob)
+        sk = ob.modifiers.new("skin", "SKIN")
+        sk.branch_smoothing = branch
+        sk.use_smooth_shade = True
+        sv = src.skin_vertices[0].data
+        for i, r in enumerate(radii):
+            sv[i].radius = (r[0] * SKIN_FIX, r[1] * SKIN_FIX)
+        for i in roots:          # つながった形ごとに1つ「根」が要る
+            sv[i].use_root = True
+        sub = ob.modifiers.new("sub", "SUBSURF")
+        sub.levels = sub.render_levels = 2
+        ev = ob.evaluated_get(bpy.context.evaluated_depsgraph_get())
+        me = bpy.data.meshes.new_from_object(ev)
+        bpy.data.objects.remove(ob)
+        bpy.data.meshes.remove(src)
+        return me
+
+    def _finish(self, name, me, up_hint):
+        import numpy as np
+        me.materials.clear()
+        # どの鎖の面か（鎖の表面にいちばん近い所）→ マテリアル
+        P = np.array([v.co[:] for v in me.vertices])
+        best_d = np.full(len(P), 1e9)
+        best_c = np.zeros(len(P), dtype=int)
+        seg_info = []
+        for ci, c in enumerate(self.chains):
+            A = np.array([p[:] for p in c["pts"][:-1]])
+            B = np.array([p[:] for p in c["pts"][1:]])
+            RA = np.array([max(r) for r in c["r"][:-1]])
+            RB = np.array([max(r) for r in c["r"][1:]])
+            AB = B - A
+            L2 = np.maximum((AB * AB).sum(1), 1e-9)
+            t = np.clip(((P[:, None, :] - A[None]) * AB[None]).sum(2) / L2[None], 0, 1)
+            Q = A[None] + t[..., None] * AB[None]
+            dist = np.linalg.norm(P[:, None, :] - Q, axis=2) - (RA[None] + (RB - RA)[None] * t)
+            j = dist.argmin(1)
+            dmin = dist[np.arange(len(P)), j]
+            better = dmin < best_d
+            best_d[better] = dmin[better]
+            best_c[better] = ci
+            seg_info.append((j, t[np.arange(len(P)), j], Q[np.arange(len(P)), j]))
+        mats = []
+        for c in self.chains:
+            if c["mat"] not in mats:
+                mats.append(c["mat"])
+        for m in mats:
+            me.materials.append(m)
+        cm = np.array([mats.index(c["mat"]) for c in self.chains])
+        mi = []
+        for poly in me.polygons:
+            vs = list(poly.vertices)
+            ch = np.bincount(best_c[vs], minlength=len(self.chains)).argmax()
+            mi.append(int(cm[ch]))
+        me.polygons.foreach_set("material_index", mi)
+        me.polygons.foreach_set("use_smooth", [True] * len(me.polygons))
+
+        # 模様用の pv（胴体の鎖にそった 前後 0〜1・断面の上下・左右）
+        pc = [i for i, c in enumerate(self.chains) if c["pattern"]]
+        if pc:
+            c = self.chains[pc[0]]
+            pts = c["pts"]
+            fr = frames_along(pts, up_hint)
+            acc = [0.0]
+            for a, b in zip(pts, pts[1:]):
+                acc.append(acc[-1] + (b - a).length)
+            j, t, Q = seg_info[pc[0]]
+            total = acc[-1]
+            pv = []
+            for i in range(len(P)):
+                k = int(j[i])
+                tt = float(t[i])
+                u = (acc[k] + (acc[k + 1] - acc[k]) * tt) / total
+                side = fr[k][0].lerp(fr[k + 1][0], tt)
+                up = fr[k][1].lerp(fr[k + 1][1], tt)
+                d = Vector(P[i]) - Vector(Q[i])
+                s_, c_ = d.dot(up), d.dot(side)
+                n = math.hypot(s_, c_) or 1.0
+                pv.append((u, s_ / n, c_ / n))
+            at = me.attributes.new("pv", "FLOAT_VECTOR", "POINT")
+            at.data.foreach_set("vector", [x for p in pv for x in p])
+        obj = bpy.data.objects.new(name, me)
+        link(obj)
+        return obj

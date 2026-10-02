@@ -127,22 +127,40 @@ class Theropod:
             ry, rt, rb = radii[i]
             radii[i] = (ry * br, rt * (1 + (br - 1) * 0.6), rb * br)
         pts = [m.translation.copy() for m in mats]
-        sm = C.catmull(pts, 6)
         up_hint = (M0.to_3x3() @ Vector((0, 0, 1))).normalized()
-        fr = C.frames_along([p for p, _ in sm], up_hint)
-        total = sum((sm[i + 1][0] - sm[i][0]).length for i in range(len(sm) - 1))
-        acc, rings = 0.0, []
-        for i, ((p, f), (side, up)) in enumerate(zip(sm, fr)):
-            if i:
-                acc += (p - sm[i - 1][0]).length
-            ry, rt, rb = C.lerp_list(radii, f)
-            rings.append((p, side, up, ry, rt, rb, acc / total))
-        bm, pv = C.loft(rings, 18, e_bot=0.92)
-        C.mesh_object(prefix + "body", bm, self.m_body, pv=pv)
+        sk = C.Skin() if C.SKIN else None
+        if sk:
+            # 関節の点に太さを付ける（上下の太さの差は、点を上下にずらして表す）。
+            # "full" は胴体もスキンモディファイアで。ほかは胴体の形は管のまま（この鎖は色分けと模様の計算だけに使う）
+            sm = C.catmull(pts, 2)
+            fr = C.frames_along([p for p, _ in sm], up_hint)
+            cp, cr = [], []
+            for (p, f), (side, up) in zip(sm, fr):
+                ry, rt, rb = C.lerp_list(radii, f)
+                cp.append(p + up * ((rt - rb) / 2))
+                cr.append((ry, (rt + rb) / 2))
+            sk.add(cp, cr, self.m_body, pattern=True, skin=(C.SKIN == "full"))
+        if not sk or C.SKIN != "full":
+            sm = C.catmull(pts, 6)
+            fr = C.frames_along([p for p, _ in sm], up_hint)
+            total = sum((sm[i + 1][0] - sm[i][0]).length for i in range(len(sm) - 1))
+            acc, rings = 0.0, []
+            for i, ((p, f), (side, up)) in enumerate(zip(sm, fr)):
+                if i:
+                    acc += (p - sm[i - 1][0]).length
+                ry, rt, rb = C.lerp_list(radii, f)
+                rings.append((p, side, up, ry, rt, rb, acc / total))
+            bm, pv = C.loft(rings, 18, e_bot=0.92)
+            if sk:
+                sk.extra.append(bm)
+            else:
+                C.mesh_object(prefix + "body", bm, self.m_body, pv=pv)
 
         eye = self._head(Mh, P, prefix)
-        self._legs(M0, P, prefix)
-        self._arms(fwd_M[2], P, prefix)
+        self._legs(M0, P, prefix, sk)
+        self._arms(fwd_M[2], P, prefix, sk)
+        if sk:
+            sk.build(prefix + "body", up_hint, fuse=C.FUSE_VOXEL if C.SKIN == "fuse" else None)
 
         hd = s["head"]
         jx = hd["skull"][-1][0] * 0.82
@@ -251,7 +269,7 @@ class Theropod:
         return eye
 
     # ------------------------------------------------------------------
-    def _legs(self, M0, P, prefix):
+    def _legs(self, M0, P, prefix, sk=None):
         lg = self.s["leg"]
         for side, ball_xy, dx, mat in ((-1, lg["near_ball"], P["near_dx"], self.m_limb), (1, lg["far_ball"], P["far_dx"], self.m_far)):
             sx, sy, sz = lg["socket"]
@@ -269,6 +287,21 @@ class Theropod:
                 ankle = ball + Vector((-lg["meta"] * math.cos(ma), 0, lg["meta"] * math.sin(ma)))
                 knee = _ik(hip, ankle, lg["thigh"], lg["shin"])
             parts = ((hip, knee, lg["r_thigh"], "thigh"), (knee, ankle, lg["r_shin"], "shin"), (ankle, ball, lg["r_meta"], "meta"))
+            if sk:
+                # 腰 → ひざ → 足首 → 指の付け根 を1本の鎖に。太ももは前後に太く、横はうすめ（ドラムスティックの形）
+                # 太ももの筋肉は腰の関節より上まで盛り上がる（前の形の だ円の筋肉 と同じ所まで）
+                up_dir = (hip - knee).normalized()
+                r0 = max(lg["r_thigh"])
+                cp, cr = [hip + up_dir * 0.14], [(r0 * 0.72, r0 * 0.62)]
+                for i, (a, b, rr, nm) in enumerate(parts):
+                    for k, p in enumerate(_seg_points(a, b, len(rr))):
+                        if i and not k:
+                            continue
+                        r = rr[k]
+                        cp.append(p)
+                        cr.append((r * 0.92, r * 0.78) if nm == "thigh" else (r, r))
+                sk.add(cp, cr, mat, attach=0)
+                parts = ()
             for a, b, rr, nm in parts:
                 if nm == "thigh":
                     # ふともも：骨の上に、だ円の大きな筋肉（太ももの「ドラムスティック」の形）
@@ -296,7 +329,7 @@ class Theropod:
                 C.cone(tip - d * 0.01, tip + (d + Vector((0, 0, -0.5))).normalized() * lg["claw"], lg["r_toe"][-1] * 1.05, self.m_claw, name=prefix + "claw", noline=True)
 
     # ------------------------------------------------------------------
-    def _arms(self, Mc, P, prefix):
+    def _arms(self, Mc, P, prefix, sk=None):
         ar = self.s.get("arm")
         if not ar:
             return
@@ -306,7 +339,14 @@ class Theropod:
             Rc = Mc.to_3x3() @ Matrix.Rotation(math.radians(-P["arm"]), 3, "Y")
             el = sh + Rc @ Vector((0.4, side * 0.1, -0.9)).normalized() * ar["upper"]
             wr = el + Rc @ Vector((0.95, 0, -0.2)).normalized() * ar["fore"]
-            for a, b, r0, r1 in ((sh, el, ar["r"][0], ar["r"][1]), (el, wr, ar["r"][1], ar["r"][1] * 0.8)):
+            segs = ((sh, el, ar["r"][0], ar["r"][1]), (el, wr, ar["r"][1], ar["r"][1] * 0.8))
+            if sk:
+                r0, r1 = ar["r"]
+                rm = (r0 + r1) / 2
+                sk.add([sh, sh.lerp(el, 0.5), el, el.lerp(wr, 0.5), wr],
+                       [(r0, r0), (rm, rm), (r1, r1), (r1 * 0.9, r1 * 0.9), (r1 * 0.8, r1 * 0.8)], mat, attach=0)
+                segs = ()
+            for a, b, r0, r1 in segs:
                 pts = _seg_points(a, b, 3)
                 fr = C.frames_along(pts)
                 rings = [(p, sd, up, r, r, r, 0.0) for p, (sd, up), r in zip(pts, fr, (r0, (r0 + r1) / 2, r1))]

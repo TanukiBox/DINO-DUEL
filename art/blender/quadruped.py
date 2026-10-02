@@ -81,21 +81,39 @@ class Quadruped:
             ry, rt, rb = radii[i]
             radii[i] = (ry * br, rt * (1 + (br - 1) * 0.6), rb * br)
         pts = [m.translation.copy() for m in mats]
-        sm = C.catmull(pts, 6)
         up_hint = (M0.to_3x3() @ Vector((0, 0, 1))).normalized()
-        fr = C.frames_along([p for p, _ in sm], up_hint)
-        total = sum((sm[i + 1][0] - sm[i][0]).length for i in range(len(sm) - 1))
-        acc, rings = 0.0, []
-        for i, ((p, f), (side, up)) in enumerate(zip(sm, fr)):
-            if i:
-                acc += (p - sm[i - 1][0]).length
-            ry, rt, rb = C.lerp_list(radii, f)
-            rings.append((p, side, up, ry, rt, rb, acc / total))
-        bm, pv = C.loft(rings, 18, e_bot=0.92)
-        C.mesh_object(prefix + "body", bm, self.m_body, pv=pv)
+        sk = C.Skin() if C.SKIN else None
+        if sk:
+            # 関節の点に太さを付ける（上下の太さの差は、点を上下にずらして表す）。
+            # "full" は胴体もスキンモディファイアで。ほかは胴体の形は管のまま（この鎖は色分けと模様の計算だけに使う）
+            sm = C.catmull(pts, 2)
+            fr = C.frames_along([p for p, _ in sm], up_hint)
+            cp, cr = [], []
+            for (p, f), (side, up) in zip(sm, fr):
+                ry, rt, rb = C.lerp_list(radii, f)
+                cp.append(p + up * ((rt - rb) / 2))
+                cr.append((ry, (rt + rb) / 2))
+            sk.add(cp, cr, self.m_body, pattern=True, skin=(C.SKIN == "full"))
+        if not sk or C.SKIN != "full":
+            sm = C.catmull(pts, 6)
+            fr = C.frames_along([p for p, _ in sm], up_hint)
+            total = sum((sm[i + 1][0] - sm[i][0]).length for i in range(len(sm) - 1))
+            acc, rings = 0.0, []
+            for i, ((p, f), (side, up)) in enumerate(zip(sm, fr)):
+                if i:
+                    acc += (p - sm[i - 1][0]).length
+                ry, rt, rb = C.lerp_list(radii, f)
+                rings.append((p, side, up, ry, rt, rb, acc / total))
+            bm, pv = C.loft(rings, 18, e_bot=0.92)
+            if sk:
+                sk.extra.append(bm)
+            else:
+                C.mesh_object(prefix + "body", bm, self.m_body, pv=pv)
 
         eye = self._head(Mh, P, prefix)
-        self._legs(M0, fwd_M[3], P, prefix)
+        self._legs(M0, fwd_M[3], P, prefix, sk)
+        if sk:
+            sk.build(prefix + "body", up_hint, fuse=C.FUSE_VOXEL if C.SKIN == "fuse" else None)
         return {
             "mouth": Mh @ Vector((hd["skull"][-1][0] * 0.9, 0, -0.06)),
             "head": Mh @ Vector((hd["skull"][-1][0] * 0.4, 0, 0.05)),
@@ -226,11 +244,24 @@ class Quadruped:
         return C.facing_eye(Mh, (ex, -ry * 0.92, zc + ez), (ex, ry * 0.92, zc + ez))
 
     # ------------------------------------------------------------------
-    def _limb(self, top, ball, lens, radii, ma, fwd, mat, prefix, nm, thigh=False):
+    def _limb(self, top, ball, lens, radii, ma, fwd, mat, prefix, nm, thigh=False, sk=None):
         """1本の脚：上の関節 → ひざ（ひじ）→ 足首 → 足の指。つなぎ目ができないように1本の管にする"""
         l1, l2, l3 = lens
         ankle = ball + Vector((-l3 * math.cos(ma), 0, l3 * math.sin(ma)))
         knee = _ik(top, ankle, l1, l2, fwd)
+        if sk:
+            cp, cr = [], []
+            if thigh:
+                r0 = max(radii[0])
+                cp, cr = [top + (top - knee).normalized() * 0.12], [(r0 * 0.75, r0 * 0.65)]
+            for i, (a, b, r) in enumerate(((top, knee, radii[0]), (knee, ankle, radii[1]), (ankle, ball, radii[2]))):
+                for k, p in enumerate(_seg_points(a, b, len(r))):
+                    if i and not k:
+                        continue
+                    cp.append(p)
+                    cr.append((r[k] * 0.95, r[k] * 0.85) if (i == 0 and thigh) else (r[k], r[k]))
+            sk.add(cp, cr, mat, attach=0)
+            return ankle
         if thigh:
             ax = knee - top
             q = ax.normalized().to_track_quat("X", "Z").to_matrix()
@@ -263,7 +294,7 @@ class Quadruped:
             C.ellipsoid(tip + d * 0.01 + Vector((0, 0, -0.005)), (lg["claw"], lg["r_toe"][-1] * 1.2, lg["r_toe"][-1] * 1.1), self.m_claw,
                         rot=d.to_track_quat("X", "Z").to_matrix(), name=prefix + "hoof", noline=True)
 
-    def _legs(self, M0, Ms, P, prefix):
+    def _legs(self, M0, Ms, P, prefix, sk=None):
         for which, Mtop, key, dxk, fwd in (("hind", M0, "hind", "hind_dx", Vector((1, 0, 0))), ("fore", Ms, "fore", "fore_dx", Vector((-1, 0, 0)))):
             lg = self.s[key]
             for side, bx, mat in ((-1, lg["near_x"], self.m_limb), (1, lg["far_x"], self.m_far)):
@@ -272,5 +303,5 @@ class Quadruped:
                 ball = Vector((bx + P[dxk], side * lg["y"], lg["ball_z"]))
                 ma = math.radians(lg["meta_angle"])
                 self._limb(top, ball, (lg["upper"], lg["lower"], lg["meta"]), (lg["r_upper"], lg["r_lower"], lg["r_meta"]), ma, fwd, mat, prefix,
-                           which, thigh=(which == "hind"))
+                           which, thigh=(which == "hind"), sk=sk)
                 self._feet(ball, side, lg, mat, prefix)
