@@ -39,12 +39,17 @@ class SculptTheropod:
                     q = J[k].copy()
                     q.y = -q.y
                     J[k[:-2] + ".R"] = q
+        rm = self.spec.get("rig_mouth")
+        if rm:
+            J["hinge"] = Vector((rm["hinge"][0], 0, rm["hinge"][1]))
+        self.rm = rm
         self.J = J
         self._import(glb_path)
         self._armature()
         self._skin()
         self._lids()
-        self._mouth()
+        if not self.rm:
+            self._mouth()            # 下あごが別の部品の古い作り方のときだけ、口の中の膜を足す
 
     # ------------------------------------------------------------------
     def _import(self, glb):
@@ -72,7 +77,7 @@ class SculptTheropod:
         """(骨の名前, 根元の関節, 先の関節, 親)"""
         B = [("spine0", "pelvis", "belly", None), ("spine1", "belly", "chest", "spine0"), ("spine2", "chest", "shoulder", "spine1"),
              ("spine3", "shoulder", "neck0", "spine2"), ("spine4", "neck0", "neck1", "spine3"), ("head", "neck1", "nose", "spine4"),
-             ("jaw", "jaw_back", "chin", "head"),
+             ("jaw", "hinge" if "hinge" in self.J else "jaw_back", "chin", "head"),
              ("tail0", "pelvis", "tail0", "spine0"), ("tail1", "tail0", "tail1", "tail0"), ("tail2", "tail1", "tail2", "tail1"),
              ("tail3", "tail2", "tail3", "tail2"), ("tail4", "tail3", "tail4", "tail3"), ("tail5", "tail4", "tail5", "tail4")]
         for s in ("L", "R"):
@@ -112,7 +117,7 @@ class SculptTheropod:
             ra = self.spec["joints"].get(a.replace(".R", ".L"), {}).get("r", 0.05)
             rb = self.spec["joints"].get(b.replace(".R", ".L"), {}).get("r", 0.05) if b in self.spec["joints"] or b.replace(".R", ".L") in self.spec["joints"] else ra
             rad[n] = (ra, rb)
-        fixed = {"jaw": "jaw", "lteeth": "jaw", "teeth": "head", "eyes": "head"}
+        fixed = {"jaw": "jaw", "lteeth": "jaw", "tongue": "jaw", "teeth": "head", "eyes": "head"}
         for pname, o in self.parts.items():
             me = o.data
             o.vertex_groups.clear()
@@ -140,15 +145,35 @@ class SculptTheropod:
                         D[P[:, 1] > 0.02, j] = 1e9
                 W = 1.0 / D ** 6
                 top = np.argsort(-W, axis=1)[:, :3]
+                jw = self._jaw_weight(P) if (pname == "body" and self.rm) else np.zeros(len(P))
                 for i in range(len(P)):
                     ws = W[i, top[i]]
-                    ws = ws / ws.sum()
+                    ws = ws / ws.sum() * (1.0 - jw[i])
                     for j, w in zip(top[i], ws):
                         if w > 0.01:
                             groups[bones[j][0]].add([i], float(w), "ADD")
+                    if jw[i] > 0.01:
+                        groups["jaw"].add([i], float(jw[i]), "ADD")
             mod = o.modifiers.new("rig", "ARMATURE")
             mod.object = self.rig
             o.parent = self.rig
+
+    def _jaw_weight(self, P):
+        """頭と下あごが1つの形のとき、どの頂点を下あごの骨で動かすか（0〜1）：
+        口の線より下で、口の角より前は 1（下あご）。口の角からちょうつがいまでは、のどへ向かってなめらかに減らす（皮が伸びる）"""
+        import numpy as np
+        rm = self.rm
+        x, y, z = P[:, 0], P[:, 1], P[:, 2]
+        zm = rm["z0"] + (x - rm["x0"]) * rm["slope"]
+
+        def ss(e0, e1, v):
+            t = np.clip((v - e0) / (e1 - e0), 0, 1)
+            return t * t * (3 - 2 * t)
+        region = ss(rm["hinge"][0] - 0.12, rm["corner"][0] + 0.03, x)
+        below = ss(zm + 0.01, zm - 0.01, z)
+        depth = ss(zm - 0.36, zm - 0.27, z)
+        side = ss(0.42, 0.34, np.abs(y))
+        return region * below * depth * side
 
     def _lids(self):
         """目を閉じるコマ用のまぶた（ふだんは隠す）"""
@@ -241,7 +266,7 @@ class SculptTheropod:
             M = M @ Tr(J[chain[i]] - J[chain[i - 1]]) @ Ry(-P["spine"][i - 1])
             fwd_M.append(M)
         Mh = M @ Ry(-P["head_pitch"]) @ Rz(P["head_yaw"]) @ Rx(P["head_roll"])
-        Mj = Mh @ Tr(J["jaw_back"] - J["neck1"]) @ Ry(P["jaw"])
+        Mj = Mh @ Tr(J.get("hinge", J["jaw_back"]) - J["neck1"]) @ Ry(P["jaw"])
         tails = ["pelvis", "tail0", "tail1", "tail2", "tail3", "tail4", "tail5"]
         tail_M = []
         M = M0

@@ -37,7 +37,7 @@ def build():
     for name, x, z, r in (("tail5", -1.97, 1.09, 0.006), ("tail4", -1.85, 1.09, 0.022), ("tail3", -1.60, 1.09, 0.042),
                           ("tail2", -1.25, 1.095, 0.068), ("tail1", -0.85, 1.10, 0.112), ("tail0", -0.45, 1.10, 0.165),
                           ("pelvis", -0.10, 1.05, 0.25), ("belly", 0.28, 1.02, 0.34), ("chest", 0.55, 1.07, 0.33),
-                          ("shoulder", 0.80, 1.12, 0.30), ("neck0", 0.98, 1.14, 0.26), ("neck1", 1.10, 1.21, 0.22)):
+                          ("shoulder", 0.80, 1.13, 0.30), ("neck0", 0.97, 1.19, 0.28), ("neck1", 1.09, 1.28, 0.25)):
         joint(name, x, z, r)
     for a, b in (("tail5", "tail4"), ("tail4", "tail3"), ("tail3", "tail2"), ("tail2", "tail1"), ("tail1", "tail0"), ("tail0", "pelvis")):
         bone("tail_" + a, a, b, group="tail", join=0.04, flat=[0.85, 1.0])
@@ -48,46 +48,54 @@ def build():
     # おなかの深さ（下へ張り出す）・胸・首の太い筋肉
     blob("belly_mass", 0.36, 0.84, (0.29, 0.38, 0.22))
     blob("chest_mass", 0.66, 0.95, (0.23, 0.2, 0.16))
-    blob("neck_muscle.L", 1.02, 1.20, (0.11, 0.2, 0.17), y=0.11, rot=[0, 0, 0])
+    # 首：頭の近くほど太く高い。首の上の線は頭のうしろの上へ、のどは下あごのうしろへ、なめらかにつながる（写真を参考に）
+    blob("neck_muscle.L", 1.02, 1.24, (0.12, 0.2, 0.18), y=0.11)
+    blob("nape", 1.10, 1.40, (0.17, 0.17, 0.12))          # 首のうしろの上（頭のうしろへつながる盛り上がり）
+    blob("throat", 1.06, 1.07, (0.17, 0.2, 0.15))         # のど（下あごのうしろへつながる）
 
-    # ---------------- 頭（上の頭の骨）----------------
-    joint("head", 1.21, 1.40, 0.17)
-    joint("face", 1.45, 1.40, 0.145)
-    joint("snout", 1.70, 1.385, 0.11)
-    joint("nose", 1.82, 1.37, 0.075)
-    bone("cranium", "neck1", "head", flat=[1.2, 1.0])
+    # ---------------- 頭（上の頭の骨と下あごを1つの形で作り、口は切りこみで開ける）----------------
+    joint("head", 1.22, 1.41, 0.175)
+    joint("face", 1.46, 1.415, 0.155)
+    joint("snout", 1.67, 1.405, 0.13)
+    joint("nose", 1.78, 1.39, 0.096)
+    bone("cranium", "neck1", "head", flat=[1.25, 1.0])
     bone("skull", "head", "face", flat=[1.3, 1.0])
     bone("muzzle", "face", "snout", flat=[1.05, 1.0])
     bone("muzzle_tip", "snout", "nose", flat=[1.0, 1.0])
-    # ほお（あごの筋肉で頭のうしろが横に張る）・まゆの骨と小さな角（目の上と前）
-    blob("cheek.L", 1.18, 1.30, (0.08, 0.13, 0.11), y=0.15)
-    blob("brow.L", 1.28, 1.535, (0.065, 0.11, 0.04), y=0.145, rot=[0, 0, 8])
-    blob("lacrimal.L", 1.37, 1.56, (0.04, 0.055, 0.035), y=0.115)
-    # 鼻の穴（へこみ）
-    blob("nostril.L", 1.80, 1.40, (0.018, 0.026, 0.016), y=0.055, op="subtract", blend=0.008)
+    # ほお（あごの筋肉で頭のうしろが横に張る）・まゆの骨（目の上の大きな出っ張り）・目の前の小さな角
+    blob("cheek.L", 1.17, 1.31, (0.085, 0.13, 0.11), y=0.15)
+    blob("brow.L", 1.28, 1.55, (0.075, 0.13, 0.05), y=0.145, rot=[0, 0, 8])
+    blob("lacrimal.L", 1.38, 1.565, (0.04, 0.055, 0.035), y=0.115)
+    blob("nostril.L", 1.77, 1.42, (0.018, 0.026, 0.016), y=0.06, op="subtract", blend=0.008)
+    # 下あご：頭と同じ形の一部（のど・首となめらかにつながる）。うしろが深く、先へ浅く
+    joint("jaw_back", 1.12, 1.15, 0.11)
+    joint("jaw_mid", 1.42, 1.185, 0.078)
+    joint("chin", 1.75, 1.25, 0.05)
+    bone("jaw_a", "jaw_back", "jaw_mid", flat=[1.55, 1.0])
+    bone("jaw_b", "jaw_mid", "chin", flat=[1.5, 1.0])
+    blob("jaw_muscle_low.L", 1.20, 1.17, (0.07, 0.12, 0.08), y=0.14)
 
-    # ---------------- 下あご（別の部品。口を開ける動きのため）----------------
-    joint("jaw_back", 1.11, 1.15, 0.10)
-    joint("jaw_mid", 1.42, 1.19, 0.066)
-    joint("chin", 1.79, 1.265, 0.036)
-    bone("jaw_a", "jaw_back", "jaw_mid", flat=[1.55, 1.0], part="jaw")
-    bone("jaw_b", "jaw_mid", "chin", flat=[1.5, 1.0], part="jaw")
+    # 口：上と下のあいだを、口の角（目の下）から鼻先の先まで薄く切りとる。開けると、口の角の皮が左右両方で少し伸びる
+    MX0, MZ0, MSL = 1.2, 1.22, 0.123                  # 口の線：z = MZ0 + (x - MX0) * MSL
+    mouth = lambda x: MZ0 + (x - MX0) * MSL
+    corner, front = 1.25, 1.95
+    cx = (corner + front) / 2
+    blob("mouth_cut", cx, mouth(cx), (0.38, (front - corner) / 2, 0.022), rot=[-math.degrees(math.atan(MSL)), 0, 0], op="subtract", blend=0.012)
 
-    # ---------------- 歯（別の部品）：上は頭の下のふちから下へ、下はあごの上のふちから上へ ----------------
-    def tooth_row(prefix, x0, x1, n, z_of, y_of, down, length, part):
-        for i in range(n):
-            t = i / (n - 1)
-            x = x0 + (x1 - x0) * t
-            L = length * (0.65 + 0.35 * math.sin(math.pi * (0.25 + 0.6 * t)))
-            z = z_of(x)
-            y = y_of(x)
-            joint("%s%d.L" % (prefix, i), x, z, 0.014, y=y)
-            joint("%s%d_tip.L" % (prefix, i), x + 0.006, z - L if down else z + L, 0.002, y=y * 0.98)
-            bone("%s%d.L" % (prefix, i), "%s%d.L" % (prefix, i), "%s%d_tip.L" % (prefix, i), part=part, blend=0.003)
+    # ---------------- 歯（別の部品）：数を少なく、大きさをばらばらに。根元は歯ぐきの中 ----------------
+    def tooth(prefix, i, x, L, down, y, part):
+        z = mouth(x) + (0.03 if down else -0.03)
+        joint("%s%d.L" % (prefix, i), x, z, L * 0.4, y=y)
+        joint("%s%d_tip.L" % (prefix, i), x + 0.01, z - (L + 0.02) if down else z + (L + 0.02), 0.004, y=y * 0.97)
+        bone("%s%d.L" % (prefix, i), "%s%d.L" % (prefix, i), "%s%d_tip.L" % (prefix, i), part=part, blend=0.003)
 
-    mouth = lambda x: 1.22 + (x - 1.2) * 0.123          # 口の線（閉じたときの上下の歯の合わせ目）
-    tooth_row("ut", 1.30, 1.80, 8, lambda x: mouth(x) + 0.012, lambda x: 0.135 - (x - 1.30) * 0.17, True, 0.055, "teeth")
-    tooth_row("lt", 1.32, 1.76, 7, lambda x: mouth(x) - 0.012, lambda x: 0.12 - (x - 1.32) * 0.16, False, 0.04, "lteeth")
+    for i, (x, L) in enumerate(((1.36, 0.038), (1.44, 0.056), (1.52, 0.07), (1.60, 0.062), (1.67, 0.048), (1.74, 0.036))):
+        tooth("ut", i, x, L, True, 0.128 - (x - 1.37) * 0.15, "teeth")
+    for i, (x, L) in enumerate(((1.40, 0.032), (1.48, 0.046), (1.56, 0.05), (1.64, 0.042), (1.71, 0.032))):
+        tooth("lt", i, x, L, False, 0.094 - (x - 1.42) * 0.12, "lteeth")
+    # 舌（別の部品。下あごといっしょに動く）
+    blob("tongue", 1.45, mouth(1.45) - 0.02, (0.07, 0.19, 0.026), rot=[-math.degrees(math.atan(MSL)), 0, 0], part="tongue")
+    RIG_MOUTH = {"hinge": [1.14, 1.215], "corner": [corner, mouth(corner)], "x0": MX0, "z0": MZ0, "slope": MSL}
 
     # ---------------- 脚（待機の形。足の裏は地面）----------------
     joint("hip.L", -0.04, 1.00, 0.17, y=0.24)
@@ -147,7 +155,7 @@ def build():
                        "width": [0.02, 0.035, 0.035, 0.03, 0.015], "depth": [0.004, 0.01, 0.01, 0.008, 0.0]}
 
     # ---------------- 色（色は前の絵と同じ系統の赤茶。恐竜図鑑の色は使わない）----------------
-    skin = ["body", "jaw"]
+    skin = ["body"]
     stripe_bones = [("spine_pelvis", 3), ("spine_belly", 2), ("spine_chest", 2), ("tail_tail0", 2), ("tail_tail1", 3), ("tail_tail2", 3), ("tail_tail3", 2)]
     paint = {
         "skin": {"color": "#8a5232", "part": skin, "roughness": 0.55},
@@ -172,19 +180,16 @@ def build():
                                  {"facing": [0, 0, -1], "range": [0.35, 0.8], "blend": "multiply"}]},
         "head_scales": {"color": "#3e2216", "part": skin, "opacity": 0.4, "height": -0.0012,
                         "mask": [{"cells": {"scale": 0.018, "range": [0.14, 0.02], "seed": 11}},
-                                 {"near": ["skull", "muzzle", "muzzle_tip", "cranium", "jaw_a", "jaw_b"], "within": 0.05, "soft": 0.06, "blend": "multiply"}]},
+                                 {"near": ["skull", "muzzle", "muzzle_tip", "cranium", "jaw_a", "jaw_b"], "within": 0.05, "soft": 0.06, "blend": "multiply"},
+                                 {"near": ["mouth_cut"], "within": 0.01, "soft": 0.01, "invert": True, "blend": "multiply"}]},
         "crease_dirt": {"color": "#22140c", "part": skin, "cavity": "concave", "radius": [0.05, 0.01], "opacity": 0.65},
         "grime": {"color": "#2a1a10", "part": skin, "opacity": 0.4, "roughness": 0.7, "mask": [{"ao": [0.5, 0.25]}]},
         "gums": {"color": "#8e3a34", "part": skin, "roughness": 0.35, "near": [b for b in B if b.startswith(("ut", "lt"))], "within": 0.02, "soft": 0.02},
         "teeth": {"color": "#d9ccb0", "part": ["teeth", "lteeth"], "roughness": 0.35},
         "teeth_base": {"color": "#a8946c", "part": ["teeth", "lteeth"], "opacity": 0.5, "noise": {"scale": 0.01, "range": [0.3, 0.8], "seed": 12}},
         # 口の中（口を開けたときに見える）：上の歯の近くの下向きの面・下の歯の近くの上向きの面を、暗い赤に
-        "palate": {"color": "#6a2824", "part": "body", "roughness": 0.3,
-                   "mask": [{"near": [b for b in B if b.startswith("ut")], "within": 0.1, "soft": 0.04},
-                            {"facing": [0, 0, -1], "range": [0.15, 0.7], "blend": "multiply"}]},
-        "mouth_floor": {"color": "#7a302a", "part": "jaw", "roughness": 0.3,
-                        "mask": [{"near": [b for b in B if b.startswith("lt")], "within": 0.1, "soft": 0.04},
-                                 {"facing": [0, 0, 1], "range": [0.15, 0.7], "blend": "multiply"}]},
+        "mouth_inside": {"color": "#6e2622", "part": "body", "roughness": 0.3, "near": ["mouth_cut"], "within": 0.01, "soft": 0.008},
+        "tongue": {"color": "#a0443c", "part": "tongue", "roughness": 0.3},
         "claws": {"color": "#1c1612", "part": "claws", "roughness": 0.3},
         "eyes": {"color": "#d8a030", "part": "eyes", "roughness": 0.05, "specular": 0.7},
         "pupil.L": {"color": "#120a06", "part": "eyes", "path": [{"at": "face_eye.L", "offset": [0.05, -0.008, 0.0], "dir": [1, -0.2, 0]}], "width": 0.016},
@@ -192,6 +197,7 @@ def build():
 
     spec = {
         "symmetry": True,
+        "rig_mouth": RIG_MOUTH,
         "paint": paint,
         "blend": 0.06,
         "joints": J, "bones": B, "blobs": O, "strokes": S,
@@ -204,7 +210,7 @@ def build():
         },
         "parts": {
             "body": {"color": [0.55, 0.32, 0.2]},
-            "jaw": {"color": [0.55, 0.34, 0.22]},
+            "tongue": {"color": [0.62, 0.27, 0.24]},
             "teeth": {"color": [0.86, 0.8, 0.66]},
             "lteeth": {"color": [0.86, 0.8, 0.66]},
             "claws": {"color": [0.12, 0.1, 0.09]},
