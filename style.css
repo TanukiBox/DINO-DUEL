@@ -1491,3 +1491,27 @@ button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 @keyframes toastIn { 0% { opacity: 0; transform: translate(-50%, 10px); } 12% { opacity: 1; transform: translate(-50%, 0); } 80% { opacity: 1; } 100% { opacity: 0; } }
 .debug-hud { position: absolute; left: 2px; bottom: calc(1px + var(--safe-b)); z-index: 200; padding: 1px 6px; border-radius: 6px; background: rgba(0, 0, 0, 0.65); color: #8af0a0; font: 10px/1.4 monospace; pointer-events: none; }
 .debug-hud.bad { color: #ff8a8a; }
+
+/* =====================================================================
+   ドット絵の恐竜とエフェクト（Blender の3Dモデルから自動で作った絵。js/game/pix.js）
+   1ドット = var(--ps) CSS px（場の大きさから、端末のピクセルの整数倍に決める）
+   ===================================================================== */
+.pix {
+  flex: 0 0 auto;
+  width: calc(var(--fw) * var(--ps, 1) * 1px);
+  height: calc(var(--fh) * var(--ps, 1) * 1px);
+  margin-bottom: calc(var(--gy, 0) * var(--ps, 1) * -1px);   /* 足の下の空きのぶん下げて、地面の高さをそろえる */
+  background-repeat: no-repeat;
+  background-size: calc(var(--fw) * var(--n) * var(--ps, 1) * 1px) calc(var(--fh) * var(--ps, 1) * 1px);
+  background-position: calc(var(--f) * var(--fw) * var(--ps, 1) * -1px) 0;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.slot.foe .pix { transform: scaleX(-1); }
+.slot.pix-slot .sprite .body { animation: none; height: 100%; aspect-ratio: auto; max-width: none; justify-content: center; }
+.slot.pix-slot.dead .body { transform: none; filter: grayscale(0.4) brightness(0.85); opacity: 0.95; }
+.pix-fx { position: absolute; background-repeat: no-repeat; image-rendering: pixelated; pointer-events: none; z-index: 6; }
+.pix-fx.flip { transform: scaleX(-1); }
+.pix-ghost { position: absolute; margin: 0; z-index: 4; }
+.pix-ghost.flip { transform: scaleX(-1); }
+.pix-face { image-rendering: pixelated; }
