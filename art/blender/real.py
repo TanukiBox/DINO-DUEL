@@ -66,7 +66,7 @@ def setup_scene(scene, light_dir):
             break
         except Exception:
             continue
-    scene.view_settings.exposure = 0.25
+    scene.view_settings.exposure = -0.45
     # 空の明るさ（青みのある、やわらかい光）
     w = scene.world
     nt = w.node_tree
@@ -83,7 +83,7 @@ def setup_scene(scene, light_dir):
     nt.links.new(ramp.outputs["Color"], bg.inputs["Color"])
     bg.inputs["Strength"].default_value = 0.7
     # 太陽（左上・手前から。高めにして、影を短く＝コマの枠からはみ出さないように）
-    L = Vector((light_dir[0] * 0.2, light_dir[1] * 0.6, light_dir[2] * 1.6)).normalized()
+    L = Vector((0.05, light_dir[1] * 0.75, light_dir[2] * 1.6)).normalized()     # 影は体のうしろへ（コマの左右からはみ出さない）
     sun = bpy.data.lights.new("Sun", "SUN")
     sun.energy = 4.5
     sun.angle = math.radians(11)

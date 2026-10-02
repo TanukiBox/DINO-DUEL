@@ -21,6 +21,7 @@ import dinos            # noqa: E402
 import theropod         # noqa: E402
 import quadruped        # noqa: E402
 
+SCULPT = False      # --sculpt：彫刻モデルを使う（sculpt_rig.py）
 SAVE_MODELS = True   # --no-model のときは 3Dモデル（art/models/）を書きかえない（比べる用の試作）
 TYPES = {"theropod": theropod.Theropod, "quadruped": quadruped.Quadruped}
 FACE = (40, 40)
@@ -31,7 +32,13 @@ def render_species(key, out, test=None, profile=False):
     spec = dinos.SPECIES[key]
     C.reset_scene(C.FRAME)
     cam = C.dino_camera()
-    body = TYPES[spec["type"]](spec)
+    sp = os.path.join(HERE, "..", "sculpt", key + ".json")
+    glb = os.path.join(HERE, "..", "build", "sculpt", "export", key + ".glb")
+    if SCULPT and os.path.exists(sp) and os.path.exists(glb):
+        import sculpt_rig
+        body = sculpt_rig.SculptTheropod(sp, glb, spec)
+    else:
+        body = TYPES[spec["type"]](spec)
     meta = {"frame": list(C.FRAME), "anims": {}, "moves": dinos.MOVES.get(key, {}), "diet": spec.get("diet", "carnivore"),
             "ready": spec.get("ready", True), "skin": spec["colors"]["base"]}
     anims = dinos.ANIMS[key]
@@ -89,9 +96,12 @@ def main():
     p.add_argument("--no-model", action="store_true", help="3Dモデル（art/models/）を書きかえない")
     p.add_argument("--prev", action="store_true", help="ティラノを前の形にする（dinos.TYRANNO_PREV。比べる用）")
     p.add_argument("--real", action="store_true", help="リアル寄りの見た目で描く（real.py。ドット絵にしない）")
+    p.add_argument("--sculpt", action="store_true", help="彫刻モデル（art/sculpt/<種>.json と、その書き出し GLB）があれば、それに骨を入れて描く")
     a = p.parse_args(argv)
     C.SKIN = a.skin or False
     C.REAL = a.real
+    global SCULPT
+    SCULPT = a.sculpt
     if a.prev:
         dinos.use_prev()
     global SAVE_MODELS

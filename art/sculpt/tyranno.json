@@ -1,0 +1,2149 @@
+{
+ "symmetry": true,
+ "paint": {
+  "skin": {
+   "color": "#8a5232",
+   "part": [
+    "body",
+    "jaw"
+   ],
+   "roughness": 0.55
+  },
+  "back_dark": {
+   "color": "#4d2c1c",
+   "part": [
+    "body",
+    "jaw"
+   ],
+   "facing": [
+    0,
+    0.15,
+    1
+   ],
+   "range": [
+    -0.05,
+    0.8
+   ],
+   "opacity": 0.85
+  },
+  "belly_light": {
+   "color": "#c9ac84",
+   "part": [
+    "body",
+    "jaw"
+   ],
+   "facing": [
+    0,
+    0,
+    -1
+   ],
+   "range": [
+    0.05,
+    0.75
+   ],
+   "opacity": 0.8
+  },
+  "tone": {
+   "color": "#6a3a24",
+   "part": [
+    "body",
+    "jaw"
+   ],
+   "opacity": 0.4,
+   "noise": {
+    "scale": 0.3,
+    "range": [
+     0.35,
+     0.75
+    ],
+    "seed": 4
+   }
+  },
+  "stripe_spine_pelvis.L": {
+   "color": "#2e1a12",
+   "part": "body",
+   "opacity": 0.75,
+   "width": [
+    0.04,
+    0.012
+   ],
+   "profile": "soft",
+   "path": [
+    {
+     "bone": "spine_pelvis",
+     "t": 0.15,
+     "side": [
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "side": [
+      1,
+      0,
+      0.15
+     ]
+    }
+   ],
+   "repeat": {
+    "count": 3,
+    "shift": {
+     "t": 0.2333333333333333
+    }
+   },
+   "mask": [
+    {
+     "noise": {
+      "scale": 0.05,
+      "range": [
+       0.25,
+       0.6
+      ],
+      "seed": 7
+     },
+     "blend": "multiply"
+    }
+   ]
+  },
+  "stripe_spine_belly.L": {
+   "color": "#2e1a12",
+   "part": "body",
+   "opacity": 0.75,
+   "width": [
+    0.04,
+    0.012
+   ],
+   "profile": "soft",
+   "path": [
+    {
+     "bone": "spine_belly",
+     "t": 0.15,
+     "side": [
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "side": [
+      1,
+      0,
+      0.15
+     ]
+    }
+   ],
+   "repeat": {
+    "count": 2,
+    "shift": {
+     "t": 0.35
+    }
+   },
+   "mask": [
+    {
+     "noise": {
+      "scale": 0.05,
+      "range": [
+       0.25,
+       0.6
+      ],
+      "seed": 7
+     },
+     "blend": "multiply"
+    }
+   ]
+  },
+  "stripe_spine_chest.L": {
+   "color": "#2e1a12",
+   "part": "body",
+   "opacity": 0.75,
+   "width": [
+    0.04,
+    0.012
+   ],
+   "profile": "soft",
+   "path": [
+    {
+     "bone": "spine_chest",
+     "t": 0.15,
+     "side": [
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "side": [
+      1,
+      0,
+      0.15
+     ]
+    }
+   ],
+   "repeat": {
+    "count": 2,
+    "shift": {
+     "t": 0.35
+    }
+   },
+   "mask": [
+    {
+     "noise": {
+      "scale": 0.05,
+      "range": [
+       0.25,
+       0.6
+      ],
+      "seed": 7
+     },
+     "blend": "multiply"
+    }
+   ]
+  },
+  "stripe_tail_tail0.L": {
+   "color": "#2e1a12",
+   "part": "body",
+   "opacity": 0.75,
+   "width": [
+    0.04,
+    0.012
+   ],
+   "profile": "soft",
+   "path": [
+    {
+     "bone": "tail_tail0",
+     "t": 0.15,
+     "side": [
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "side": [
+      1,
+      0,
+      0.15
+     ]
+    }
+   ],
+   "repeat": {
+    "count": 2,
+    "shift": {
+     "t": 0.35
+    }
+   },
+   "mask": [
+    {
+     "noise": {
+      "scale": 0.05,
+      "range": [
+       0.25,
+       0.6
+      ],
+      "seed": 7
+     },
+     "blend": "multiply"
+    }
+   ]
+  },
+  "stripe_tail_tail1.L": {
+   "color": "#2e1a12",
+   "part": "body",
+   "opacity": 0.75,
+   "width": [
+    0.04,
+    0.012
+   ],
+   "profile": "soft",
+   "path": [
+    {
+     "bone": "tail_tail1",
+     "t": 0.15,
+     "side": [
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "side": [
+      1,
+      0,
+      0.15
+     ]
+    }
+   ],
+   "repeat": {
+    "count": 3,
+    "shift": {
+     "t": 0.2333333333333333
+    }
+   },
+   "mask": [
+    {
+     "noise": {
+      "scale": 0.05,
+      "range": [
+       0.25,
+       0.6
+      ],
+      "seed": 7
+     },
+     "blend": "multiply"
+    }
+   ]
+  },
+  "stripe_tail_tail2.L": {
+   "color": "#2e1a12",
+   "part": "body",
+   "opacity": 0.75,
+   "width": [
+    0.04,
+    0.012
+   ],
+   "profile": "soft",
+   "path": [
+    {
+     "bone": "tail_tail2",
+     "t": 0.15,
+     "side": [
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "side": [
+      1,
+      0,
+      0.15
+     ]
+    }
+   ],
+   "repeat": {
+    "count": 3,
+    "shift": {
+     "t": 0.2333333333333333
+    }
+   },
+   "mask": [
+    {
+     "noise": {
+      "scale": 0.05,
+      "range": [
+       0.25,
+       0.6
+      ],
+      "seed": 7
+     },
+     "blend": "multiply"
+    }
+   ]
+  },
+  "stripe_tail_tail3.L": {
+   "color": "#2e1a12",
+   "part": "body",
+   "opacity": 0.75,
+   "width": [
+    0.04,
+    0.012
+   ],
+   "profile": "soft",
+   "path": [
+    {
+     "bone": "tail_tail3",
+     "t": 0.15,
+     "side": [
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "side": [
+      1,
+      0,
+      0.15
+     ]
+    }
+   ],
+   "repeat": {
+    "count": 2,
+    "shift": {
+     "t": 0.35
+    }
+   },
+   "mask": [
+    {
+     "noise": {
+      "scale": 0.05,
+      "range": [
+       0.25,
+       0.6
+      ],
+      "seed": 7
+     },
+     "blend": "multiply"
+    }
+   ]
+  },
+  "scales": {
+   "color": "#4a2a1a",
+   "part": [
+    "body",
+    "jaw"
+   ],
+   "opacity": 0.35,
+   "height": -0.0018,
+   "mask": [
+    {
+     "cells": {
+      "scale": 0.035,
+      "range": [
+       0.14,
+       0.02
+      ],
+      "seed": 2
+     }
+    }
+   ]
+  },
+  "scale_tone": {
+   "color": "#5e3420",
+   "part": [
+    "body",
+    "jaw"
+   ],
+   "opacity": 0.3,
+   "mask": [
+    {
+     "cells": {
+      "scale": 0.035,
+      "mode": "id",
+      "range": [
+       0.4,
+       1.0
+      ],
+      "seed": 2
+     }
+    }
+   ]
+  },
+  "back_plates": {
+   "color": "#3c2216",
+   "part": [
+    "body",
+    "jaw"
+   ],
+   "opacity": 0.4,
+   "height": 0.003,
+   "mask": [
+    {
+     "cells": {
+      "scale": 0.07,
+      "mode": "distance",
+      "range": [
+       0.4,
+       0.12
+      ],
+      "seed": 5
+     }
+    },
+    {
+     "facing": [
+      0,
+      0,
+      1
+     ],
+     "range": [
+      0.45,
+      0.85
+     ],
+     "blend": "multiply"
+    }
+   ]
+  },
+  "belly_bands": {
+   "color": "#a88a66",
+   "part": [
+    "body",
+    "jaw"
+   ],
+   "opacity": 0.4,
+   "height": -0.0015,
+   "mask": [
+    {
+     "cells": {
+      "scale": 0.04,
+      "range": [
+       0.14,
+       0.02
+      ],
+      "stretch": {
+       "dir": [
+        1,
+        0,
+        0
+       ],
+       "factor": 3
+      },
+      "seed": 8
+     }
+    },
+    {
+     "facing": [
+      0,
+      0,
+      -1
+     ],
+     "range": [
+      0.35,
+      0.8
+     ],
+     "blend": "multiply"
+    }
+   ]
+  },
+  "head_scales": {
+   "color": "#3e2216",
+   "part": [
+    "body",
+    "jaw"
+   ],
+   "opacity": 0.4,
+   "height": -0.0012,
+   "mask": [
+    {
+     "cells": {
+      "scale": 0.018,
+      "range": [
+       0.14,
+       0.02
+      ],
+      "seed": 11
+     }
+    },
+    {
+     "near": [
+      "skull",
+      "muzzle",
+      "muzzle_tip",
+      "cranium",
+      "jaw_a",
+      "jaw_b"
+     ],
+     "within": 0.05,
+     "soft": 0.06,
+     "blend": "multiply"
+    }
+   ]
+  },
+  "crease_dirt": {
+   "color": "#22140c",
+   "part": [
+    "body",
+    "jaw"
+   ],
+   "cavity": "concave",
+   "radius": [
+    0.05,
+    0.01
+   ],
+   "opacity": 0.65
+  },
+  "grime": {
+   "color": "#2a1a10",
+   "part": [
+    "body",
+    "jaw"
+   ],
+   "opacity": 0.4,
+   "roughness": 0.7,
+   "mask": [
+    {
+     "ao": [
+      0.5,
+      0.25
+     ]
+    }
+   ]
+  },
+  "gums": {
+   "color": "#8e3a34",
+   "part": [
+    "body",
+    "jaw"
+   ],
+   "roughness": 0.35,
+   "near": [
+    "ut0.L",
+    "ut1.L",
+    "ut2.L",
+    "ut3.L",
+    "ut4.L",
+    "ut5.L",
+    "ut6.L",
+    "ut7.L",
+    "lt0.L",
+    "lt1.L",
+    "lt2.L",
+    "lt3.L",
+    "lt4.L",
+    "lt5.L",
+    "lt6.L"
+   ],
+   "within": 0.02,
+   "soft": 0.02
+  },
+  "teeth": {
+   "color": "#d9ccb0",
+   "part": [
+    "teeth",
+    "lteeth"
+   ],
+   "roughness": 0.35
+  },
+  "teeth_base": {
+   "color": "#a8946c",
+   "part": [
+    "teeth",
+    "lteeth"
+   ],
+   "opacity": 0.5,
+   "noise": {
+    "scale": 0.01,
+    "range": [
+     0.3,
+     0.8
+    ],
+    "seed": 12
+   }
+  },
+  "palate": {
+   "color": "#6a2824",
+   "part": "body",
+   "roughness": 0.3,
+   "mask": [
+    {
+     "near": [
+      "ut0.L",
+      "ut1.L",
+      "ut2.L",
+      "ut3.L",
+      "ut4.L",
+      "ut5.L",
+      "ut6.L",
+      "ut7.L"
+     ],
+     "within": 0.1,
+     "soft": 0.04
+    },
+    {
+     "facing": [
+      0,
+      0,
+      -1
+     ],
+     "range": [
+      0.15,
+      0.7
+     ],
+     "blend": "multiply"
+    }
+   ]
+  },
+  "mouth_floor": {
+   "color": "#7a302a",
+   "part": "jaw",
+   "roughness": 0.3,
+   "mask": [
+    {
+     "near": [
+      "lt0.L",
+      "lt1.L",
+      "lt2.L",
+      "lt3.L",
+      "lt4.L",
+      "lt5.L",
+      "lt6.L"
+     ],
+     "within": 0.1,
+     "soft": 0.04
+    },
+    {
+     "facing": [
+      0,
+      0,
+      1
+     ],
+     "range": [
+      0.15,
+      0.7
+     ],
+     "blend": "multiply"
+    }
+   ]
+  },
+  "claws": {
+   "color": "#1c1612",
+   "part": "claws",
+   "roughness": 0.3
+  },
+  "eyes": {
+   "color": "#d8a030",
+   "part": "eyes",
+   "roughness": 0.05,
+   "specular": 0.7
+  },
+  "pupil.L": {
+   "color": "#120a06",
+   "part": "eyes",
+   "path": [
+    {
+     "at": "face_eye.L",
+     "offset": [
+      0.05,
+      -0.008,
+      0.0
+     ],
+     "dir": [
+      1,
+      -0.2,
+      0
+     ]
+    }
+   ],
+   "width": 0.016
+  }
+ },
+ "blend": 0.06,
+ "joints": {
+  "tail5": {
+   "pos": [
+    0.0,
+    1.97,
+    1.09
+   ],
+   "r": 0.006
+  },
+  "tail4": {
+   "pos": [
+    0.0,
+    1.85,
+    1.09
+   ],
+   "r": 0.022
+  },
+  "tail3": {
+   "pos": [
+    0.0,
+    1.6,
+    1.09
+   ],
+   "r": 0.042
+  },
+  "tail2": {
+   "pos": [
+    0.0,
+    1.25,
+    1.095
+   ],
+   "r": 0.068
+  },
+  "tail1": {
+   "pos": [
+    0.0,
+    0.85,
+    1.1
+   ],
+   "r": 0.112
+  },
+  "tail0": {
+   "pos": [
+    0.0,
+    0.45,
+    1.1
+   ],
+   "r": 0.165
+  },
+  "pelvis": {
+   "pos": [
+    0.0,
+    0.1,
+    1.05
+   ],
+   "r": 0.25
+  },
+  "belly": {
+   "pos": [
+    0.0,
+    -0.28,
+    1.02
+   ],
+   "r": 0.34
+  },
+  "chest": {
+   "pos": [
+    0.0,
+    -0.55,
+    1.07
+   ],
+   "r": 0.33
+  },
+  "shoulder": {
+   "pos": [
+    0.0,
+    -0.8,
+    1.12
+   ],
+   "r": 0.3
+  },
+  "neck0": {
+   "pos": [
+    0.0,
+    -0.98,
+    1.14
+   ],
+   "r": 0.26
+  },
+  "neck1": {
+   "pos": [
+    0.0,
+    -1.1,
+    1.21
+   ],
+   "r": 0.22
+  },
+  "head": {
+   "pos": [
+    0.0,
+    -1.21,
+    1.4
+   ],
+   "r": 0.17
+  },
+  "face": {
+   "pos": [
+    0.0,
+    -1.45,
+    1.4
+   ],
+   "r": 0.145
+  },
+  "snout": {
+   "pos": [
+    0.0,
+    -1.7,
+    1.385
+   ],
+   "r": 0.11
+  },
+  "nose": {
+   "pos": [
+    0.0,
+    -1.82,
+    1.37
+   ],
+   "r": 0.075
+  },
+  "jaw_back": {
+   "pos": [
+    0.0,
+    -1.11,
+    1.15
+   ],
+   "r": 0.1
+  },
+  "jaw_mid": {
+   "pos": [
+    0.0,
+    -1.42,
+    1.19
+   ],
+   "r": 0.066
+  },
+  "chin": {
+   "pos": [
+    0.0,
+    -1.79,
+    1.265
+   ],
+   "r": 0.036
+  },
+  "ut0.L": {
+   "pos": [
+    0.135,
+    -1.3,
+    1.2443
+   ],
+   "r": 0.014
+  },
+  "ut0_tip.L": {
+   "pos": [
+    0.1323,
+    -1.306,
+    1.1949
+   ],
+   "r": 0.002
+  },
+  "ut1.L": {
+   "pos": [
+    0.1229,
+    -1.3714,
+    1.2531
+   ],
+   "r": 0.014
+  },
+  "ut1_tip.L": {
+   "pos": [
+    0.1204,
+    -1.3774,
+    1.2006
+   ],
+   "r": 0.002
+  },
+  "ut2.L": {
+   "pos": [
+    0.1107,
+    -1.4429,
+    1.2619
+   ],
+   "r": 0.014
+  },
+  "ut2_tip.L": {
+   "pos": [
+    0.1085,
+    -1.4489,
+    1.2075
+   ],
+   "r": 0.002
+  },
+  "ut3.L": {
+   "pos": [
+    0.0986,
+    -1.5143,
+    1.2707
+   ],
+   "r": 0.014
+  },
+  "ut3_tip.L": {
+   "pos": [
+    0.0966,
+    -1.5203,
+    1.2157
+   ],
+   "r": 0.002
+  },
+  "ut4.L": {
+   "pos": [
+    0.0864,
+    -1.5857,
+    1.2794
+   ],
+   "r": 0.014
+  },
+  "ut4_tip.L": {
+   "pos": [
+    0.0847,
+    -1.5917,
+    1.2253
+   ],
+   "r": 0.002
+  },
+  "ut5.L": {
+   "pos": [
+    0.0743,
+    -1.6571,
+    1.2882
+   ],
+   "r": 0.014
+  },
+  "ut5_tip.L": {
+   "pos": [
+    0.0728,
+    -1.6631,
+    1.2362
+   ],
+   "r": 0.002
+  },
+  "ut6.L": {
+   "pos": [
+    0.0621,
+    -1.7286,
+    1.297
+   ],
+   "r": 0.014
+  },
+  "ut6_tip.L": {
+   "pos": [
+    0.0609,
+    -1.7346,
+    1.2483
+   ],
+   "r": 0.002
+  },
+  "ut7.L": {
+   "pos": [
+    0.05,
+    -1.8,
+    1.3058
+   ],
+   "r": 0.014
+  },
+  "ut7_tip.L": {
+   "pos": [
+    0.049,
+    -1.806,
+    1.2613
+   ],
+   "r": 0.002
+  },
+  "lt0.L": {
+   "pos": [
+    0.12,
+    -1.32,
+    1.2228
+   ],
+   "r": 0.014
+  },
+  "lt0_tip.L": {
+   "pos": [
+    0.1176,
+    -1.326,
+    1.2587
+   ],
+   "r": 0.002
+  },
+  "lt1.L": {
+   "pos": [
+    0.1083,
+    -1.3933,
+    1.2318
+   ],
+   "r": 0.014
+  },
+  "lt1_tip.L": {
+   "pos": [
+    0.1061,
+    -1.3993,
+    1.2703
+   ],
+   "r": 0.002
+  },
+  "lt2.L": {
+   "pos": [
+    0.0965,
+    -1.4667,
+    1.2408
+   ],
+   "r": 0.014
+  },
+  "lt2_tip.L": {
+   "pos": [
+    0.0946,
+    -1.4727,
+    1.2806
+   ],
+   "r": 0.002
+  },
+  "lt3.L": {
+   "pos": [
+    0.0848,
+    -1.54,
+    1.2498
+   ],
+   "r": 0.014
+  },
+  "lt3_tip.L": {
+   "pos": [
+    0.0831,
+    -1.546,
+    1.2896
+   ],
+   "r": 0.002
+  },
+  "lt4.L": {
+   "pos": [
+    0.0731,
+    -1.6133,
+    1.2588
+   ],
+   "r": 0.014
+  },
+  "lt4_tip.L": {
+   "pos": [
+    0.0716,
+    -1.6193,
+    1.2973
+   ],
+   "r": 0.002
+  },
+  "lt5.L": {
+   "pos": [
+    0.0613,
+    -1.6867,
+    1.2679
+   ],
+   "r": 0.014
+  },
+  "lt5_tip.L": {
+   "pos": [
+    0.0601,
+    -1.6927,
+    1.3038
+   ],
+   "r": 0.002
+  },
+  "lt6.L": {
+   "pos": [
+    0.0496,
+    -1.76,
+    1.2769
+   ],
+   "r": 0.014
+  },
+  "lt6_tip.L": {
+   "pos": [
+    0.0486,
+    -1.766,
+    1.3092
+   ],
+   "r": 0.002
+  },
+  "hip.L": {
+   "pos": [
+    0.24,
+    0.04,
+    1.0
+   ],
+   "r": 0.17
+  },
+  "knee.L": {
+   "pos": [
+    0.25,
+    -0.173,
+    0.615
+   ],
+   "r": 0.105
+  },
+  "ankle.L": {
+   "pos": [
+    0.25,
+    0.04,
+    0.253
+   ],
+   "r": 0.07
+  },
+  "toe.L": {
+   "pos": [
+    0.26,
+    -0.08,
+    0.045
+   ],
+   "r": 0.06
+  },
+  "shoulder.L": {
+   "pos": [
+    0.22,
+    -0.9,
+    0.93
+   ],
+   "r": 0.07
+  },
+  "elbow.L": {
+   "pos": [
+    0.25,
+    -0.95,
+    0.73
+   ],
+   "r": 0.052
+  },
+  "wrist.L": {
+   "pos": [
+    0.24,
+    -1.1,
+    0.68
+   ],
+   "r": 0.042
+  },
+  "f1.L": {
+   "pos": [
+    0.26,
+    -1.17,
+    0.61
+   ],
+   "r": 0.022
+  },
+  "f1_tip.L": {
+   "pos": [
+    0.265,
+    -1.19,
+    0.56
+   ],
+   "r": 0.004
+  },
+  "f2.L": {
+   "pos": [
+    0.215,
+    -1.16,
+    0.63
+   ],
+   "r": 0.02
+  },
+  "f2_tip.L": {
+   "pos": [
+    0.21,
+    -1.18,
+    0.58
+   ],
+   "r": 0.004
+  }
+ },
+ "bones": {
+  "tail_tail5": {
+   "a": "tail5",
+   "b": "tail4",
+   "group": "tail",
+   "join": 0.04,
+   "flat": [
+    0.85,
+    1.0
+   ]
+  },
+  "tail_tail4": {
+   "a": "tail4",
+   "b": "tail3",
+   "group": "tail",
+   "join": 0.04,
+   "flat": [
+    0.85,
+    1.0
+   ]
+  },
+  "tail_tail3": {
+   "a": "tail3",
+   "b": "tail2",
+   "group": "tail",
+   "join": 0.04,
+   "flat": [
+    0.85,
+    1.0
+   ]
+  },
+  "tail_tail2": {
+   "a": "tail2",
+   "b": "tail1",
+   "group": "tail",
+   "join": 0.04,
+   "flat": [
+    0.85,
+    1.0
+   ]
+  },
+  "tail_tail1": {
+   "a": "tail1",
+   "b": "tail0",
+   "group": "tail",
+   "join": 0.04,
+   "flat": [
+    0.85,
+    1.0
+   ]
+  },
+  "tail_tail0": {
+   "a": "tail0",
+   "b": "pelvis",
+   "group": "tail",
+   "join": 0.04,
+   "flat": [
+    0.85,
+    1.0
+   ]
+  },
+  "spine_pelvis": {
+   "a": "pelvis",
+   "b": "belly",
+   "flat": [
+    1.0,
+    1.05
+   ]
+  },
+  "spine_belly": {
+   "a": "belly",
+   "b": "chest",
+   "flat": [
+    1.0,
+    1.05
+   ]
+  },
+  "spine_chest": {
+   "a": "chest",
+   "b": "shoulder",
+   "flat": [
+    1.0,
+    1.05
+   ]
+  },
+  "neck_a": {
+   "a": "shoulder",
+   "b": "neck0",
+   "flat": [
+    1.0,
+    1.05
+   ]
+  },
+  "neck_b": {
+   "a": "neck0",
+   "b": "neck1",
+   "flat": [
+    1.0,
+    1.05
+   ]
+  },
+  "cranium": {
+   "a": "neck1",
+   "b": "head",
+   "flat": [
+    1.2,
+    1.0
+   ]
+  },
+  "skull": {
+   "a": "head",
+   "b": "face",
+   "flat": [
+    1.3,
+    1.0
+   ]
+  },
+  "muzzle": {
+   "a": "face",
+   "b": "snout",
+   "flat": [
+    1.05,
+    1.0
+   ]
+  },
+  "muzzle_tip": {
+   "a": "snout",
+   "b": "nose",
+   "flat": [
+    1.0,
+    1.0
+   ]
+  },
+  "jaw_a": {
+   "a": "jaw_back",
+   "b": "jaw_mid",
+   "flat": [
+    1.55,
+    1.0
+   ],
+   "part": "jaw"
+  },
+  "jaw_b": {
+   "a": "jaw_mid",
+   "b": "chin",
+   "flat": [
+    1.5,
+    1.0
+   ],
+   "part": "jaw"
+  },
+  "ut0.L": {
+   "a": "ut0.L",
+   "b": "ut0_tip.L",
+   "part": "teeth",
+   "blend": 0.003
+  },
+  "ut1.L": {
+   "a": "ut1.L",
+   "b": "ut1_tip.L",
+   "part": "teeth",
+   "blend": 0.003
+  },
+  "ut2.L": {
+   "a": "ut2.L",
+   "b": "ut2_tip.L",
+   "part": "teeth",
+   "blend": 0.003
+  },
+  "ut3.L": {
+   "a": "ut3.L",
+   "b": "ut3_tip.L",
+   "part": "teeth",
+   "blend": 0.003
+  },
+  "ut4.L": {
+   "a": "ut4.L",
+   "b": "ut4_tip.L",
+   "part": "teeth",
+   "blend": 0.003
+  },
+  "ut5.L": {
+   "a": "ut5.L",
+   "b": "ut5_tip.L",
+   "part": "teeth",
+   "blend": 0.003
+  },
+  "ut6.L": {
+   "a": "ut6.L",
+   "b": "ut6_tip.L",
+   "part": "teeth",
+   "blend": 0.003
+  },
+  "ut7.L": {
+   "a": "ut7.L",
+   "b": "ut7_tip.L",
+   "part": "teeth",
+   "blend": 0.003
+  },
+  "lt0.L": {
+   "a": "lt0.L",
+   "b": "lt0_tip.L",
+   "part": "lteeth",
+   "blend": 0.003
+  },
+  "lt1.L": {
+   "a": "lt1.L",
+   "b": "lt1_tip.L",
+   "part": "lteeth",
+   "blend": 0.003
+  },
+  "lt2.L": {
+   "a": "lt2.L",
+   "b": "lt2_tip.L",
+   "part": "lteeth",
+   "blend": 0.003
+  },
+  "lt3.L": {
+   "a": "lt3.L",
+   "b": "lt3_tip.L",
+   "part": "lteeth",
+   "blend": 0.003
+  },
+  "lt4.L": {
+   "a": "lt4.L",
+   "b": "lt4_tip.L",
+   "part": "lteeth",
+   "blend": 0.003
+  },
+  "lt5.L": {
+   "a": "lt5.L",
+   "b": "lt5_tip.L",
+   "part": "lteeth",
+   "blend": 0.003
+  },
+  "lt6.L": {
+   "a": "lt6.L",
+   "b": "lt6_tip.L",
+   "part": "lteeth",
+   "blend": 0.003
+  },
+  "thigh.L": {
+   "a": "hip.L",
+   "b": "knee.L",
+   "r_a": 0.27,
+   "r_b": 0.115
+  },
+  "shin.L": {
+   "a": "knee.L",
+   "b": "ankle.L",
+   "r_a": 0.115,
+   "r_b": 0.075,
+   "blend": 0.02
+  },
+  "meta.L": {
+   "a": "ankle.L",
+   "b": "toe.L",
+   "r_a": 0.075,
+   "r_b": 0.06,
+   "blend": 0.015
+  },
+  "upperarm.L": {
+   "a": "shoulder.L",
+   "b": "elbow.L",
+   "blend": 0.015
+  },
+  "forearm.L": {
+   "a": "elbow.L",
+   "b": "wrist.L",
+   "blend": 0.012
+  },
+  "finger1.L": {
+   "a": "wrist.L",
+   "b": "f1.L",
+   "blend": 0.008
+  },
+  "finger2.L": {
+   "a": "wrist.L",
+   "b": "f2.L",
+   "blend": 0.008
+  },
+  "claw1.L": {
+   "a": "f1.L",
+   "b": "f1_tip.L",
+   "part": "claws",
+   "blend": 0.004
+  },
+  "claw2.L": {
+   "a": "f2.L",
+   "b": "f2_tip.L",
+   "part": "claws",
+   "blend": 0.004
+  }
+ },
+ "blobs": {
+  "belly_mass": {
+   "at": [
+    0.0,
+    -0.36,
+    0.84
+   ],
+   "size": [
+    0.29,
+    0.38,
+    0.22
+   ]
+  },
+  "chest_mass": {
+   "at": [
+    0.0,
+    -0.66,
+    0.95
+   ],
+   "size": [
+    0.23,
+    0.2,
+    0.16
+   ]
+  },
+  "neck_muscle.L": {
+   "at": [
+    0.11,
+    -1.02,
+    1.2
+   ],
+   "size": [
+    0.11,
+    0.2,
+    0.17
+   ],
+   "rot": [
+    0,
+    0,
+    0
+   ]
+  },
+  "cheek.L": {
+   "at": [
+    0.15,
+    -1.18,
+    1.3
+   ],
+   "size": [
+    0.08,
+    0.13,
+    0.11
+   ]
+  },
+  "brow.L": {
+   "at": [
+    0.145,
+    -1.28,
+    1.535
+   ],
+   "size": [
+    0.065,
+    0.11,
+    0.04
+   ],
+   "rot": [
+    0,
+    0,
+    8
+   ]
+  },
+  "lacrimal.L": {
+   "at": [
+    0.115,
+    -1.37,
+    1.56
+   ],
+   "size": [
+    0.04,
+    0.055,
+    0.035
+   ]
+  },
+  "nostril.L": {
+   "at": [
+    0.055,
+    -1.8,
+    1.4
+   ],
+   "size": [
+    0.018,
+    0.026,
+    0.016
+   ],
+   "op": "subtract",
+   "blend": 0.008
+  },
+  "haunch.L": {
+   "at": [
+    0.25,
+    -0.0,
+    0.92
+   ],
+   "size": [
+    0.15,
+    0.24,
+    0.24
+   ]
+  },
+  "calf.L": {
+   "at": [
+    0.25,
+    -0.06,
+    0.48
+   ],
+   "size": [
+    0.08,
+    0.11,
+    0.17
+   ]
+  }
+ },
+ "strokes": {
+  "jaw_muscle.L": {
+   "op": "clay",
+   "path": [
+    {
+     "bone": "skull",
+     "t": 0.0,
+     "side": [
+      1,
+      0,
+      0.35
+     ]
+    },
+    {
+     "t": 0.28
+    }
+   ],
+   "width": [
+    0.075,
+    0.05
+   ],
+   "depth": [
+    0.02,
+    0.0
+   ]
+  },
+  "cheekbone.L": {
+   "op": "clay",
+   "path": [
+    {
+     "bone": "skull",
+     "t": 0.1,
+     "side": [
+      1,
+      0,
+      -0.25
+     ]
+    },
+    {
+     "t": 0.45
+    },
+    {
+     "t": 0.8
+    }
+   ],
+   "width": 0.032,
+   "depth": [
+    0.0,
+    0.012,
+    0.0
+   ]
+  },
+  "snout_bumps": {
+   "op": "clay",
+   "path": [
+    {
+     "bone": "muzzle",
+     "t": 0.5,
+     "side": [
+      0,
+      0,
+      1
+     ]
+    }
+   ],
+   "width": 0.022,
+   "depth": 0.006,
+   "profile": "round",
+   "scatter": {
+    "count": 12,
+    "seed": 3,
+    "t": [
+     0.0,
+     1.0
+    ],
+    "around": [
+     -35,
+     35
+    ],
+    "scale": [
+     0.7,
+     1.2
+    ],
+    "spacing": 0.045
+   }
+  },
+  "neck_folds.L": {
+   "op": "crease",
+   "path": [
+    {
+     "bone": "neck_a",
+     "t": 0.3,
+     "side": [
+      1,
+      0,
+      -0.7
+     ]
+    },
+    {
+     "side": [
+      1,
+      0,
+      0
+     ]
+    },
+    {
+     "side": [
+      1,
+      0,
+      0.6
+     ]
+    }
+   ],
+   "width": 0.022,
+   "depth": [
+    0.003,
+    0.009,
+    0.003
+   ],
+   "repeat": {
+    "count": 4,
+    "shift": {
+     "t": 0.22
+    },
+    "scale": 0.9
+   }
+  },
+  "throat_folds.L": {
+   "op": "crease",
+   "path": [
+    {
+     "bone": "neck_b",
+     "t": 0.0,
+     "side": [
+      0.1,
+      0,
+      -1
+     ]
+    },
+    {
+     "side": [
+      0.8,
+      0,
+      -0.6
+     ]
+    }
+   ],
+   "width": 0.018,
+   "depth": [
+    0.007,
+    0.002
+   ],
+   "repeat": {
+    "count": 3,
+    "shift": {
+     "t": 0.3
+    }
+   }
+  },
+  "pectoral.L": {
+   "op": "clay",
+   "path": [
+    {
+     "bone": "spine_chest",
+     "t": 0.3,
+     "side": [
+      1,
+      -0.3,
+      -0.7
+     ]
+    },
+    {
+     "t": 0.7
+    },
+    {
+     "t": 1.0
+    }
+   ],
+   "width": [
+    0.09,
+    0.12,
+    0.08
+   ],
+   "depth": [
+    0.0,
+    0.028,
+    0.0
+   ]
+  },
+  "ribs.L": {
+   "op": "clay",
+   "path": [
+    {
+     "bone": "spine_belly",
+     "t": 0.05,
+     "side": [
+      1,
+      0,
+      0.35
+     ]
+    },
+    {
+     "side": [
+      1,
+      0,
+      -0.45
+     ]
+    }
+   ],
+   "width": 0.035,
+   "depth": [
+    0.007,
+    0.0
+   ],
+   "repeat": {
+    "count": 6,
+    "shift": {
+     "t": 0.14
+    }
+   }
+  },
+  "thigh_front.L": {
+   "op": "clay",
+   "path": [
+    {
+     "bone": "thigh.L",
+     "t": 0.15,
+     "side": [
+      0,
+      -1,
+      0
+     ]
+    },
+    {
+     "t": 0.5
+    },
+    {
+     "t": 0.85
+    }
+   ],
+   "width": [
+    0.06,
+    0.09,
+    0.05
+   ],
+   "depth": [
+    0.0,
+    0.03,
+    0.0
+   ]
+  },
+  "thigh_back.L": {
+   "op": "clay",
+   "path": [
+    {
+     "bone": "thigh.L",
+     "t": 0.1,
+     "side": [
+      0.3,
+      1,
+      0
+     ]
+    },
+    {
+     "t": 0.5
+    },
+    {
+     "t": 0.8
+    }
+   ],
+   "width": [
+    0.08,
+    0.08,
+    0.05
+   ],
+   "depth": [
+    0.0,
+    0.025,
+    0.0
+   ]
+  },
+  "tail_muscle.L": {
+   "op": "clay",
+   "path": [
+    {
+     "bone": "tail_tail1",
+     "t": 0.4,
+     "side": [
+      0.7,
+      0,
+      -0.7
+     ]
+    },
+    {
+     "t": 1.0
+    },
+    {
+     "bone": "tail_tail0",
+     "t": 0.6
+    }
+   ],
+   "width": [
+    0.04,
+    0.07,
+    0.06
+   ],
+   "depth": [
+    0.0,
+    0.02,
+    0.0
+   ]
+  },
+  "calf_back.L": {
+   "op": "clay",
+   "path": [
+    {
+     "bone": "shin.L",
+     "t": 0.1,
+     "side": [
+      0,
+      1,
+      0
+     ]
+    },
+    {
+     "t": 0.5
+    }
+   ],
+   "width": [
+    0.05,
+    0.035
+   ],
+   "depth": [
+    0.016,
+    0.0
+   ]
+  },
+  "knee_crease.L": {
+   "op": "crease",
+   "path": [
+    {
+     "bone": "shin.L",
+     "t": 0.06,
+     "side": [
+      0,
+      1,
+      0
+     ],
+     "around": -45
+    },
+    {
+     "around": 0
+    },
+    {
+     "around": 45
+    }
+   ],
+   "width": 0.016,
+   "depth": [
+    0.002,
+    0.007,
+    0.002
+   ]
+  },
+  "ankle_folds.L": {
+   "op": "crease",
+   "path": [
+    {
+     "bone": "meta.L",
+     "t": 0.06,
+     "side": [
+      0,
+      -1,
+      0
+     ],
+     "around": -50
+    },
+    {
+     "around": 0
+    },
+    {
+     "around": 50
+    }
+   ],
+   "width": 0.012,
+   "depth": [
+    0.001,
+    0.005,
+    0.001
+   ],
+   "repeat": {
+    "count": 3,
+    "shift": {
+     "t": 0.07
+    }
+   }
+  },
+  "back_ridge": {
+   "op": "clay",
+   "path": [
+    {
+     "bone": "neck_b",
+     "t": 0.2,
+     "side": [
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "bone": "spine_chest",
+     "t": 0.5
+    },
+    {
+     "bone": "spine_pelvis",
+     "t": 0.0
+    },
+    {
+     "bone": "tail_tail1",
+     "t": 1.0
+    },
+    {
+     "bone": "tail_tail2",
+     "t": 0.2
+    }
+   ],
+   "width": [
+    0.02,
+    0.035,
+    0.035,
+    0.03,
+    0.015
+   ],
+   "depth": [
+    0.004,
+    0.01,
+    0.01,
+    0.008,
+    0.0
+   ]
+  }
+ },
+ "kits": {
+  "foot.L": {
+   "type": "foot",
+   "ankle": "ankle.L",
+   "ball": "toe.L",
+   "toes": 3,
+   "length": 0.2,
+   "lengths": [
+    0.85,
+    1.0,
+    0.8
+   ],
+   "r": 0.045,
+   "spread": 34,
+   "curl": 8,
+   "heel": 0.05,
+   "size": [
+    0.12,
+    0.13,
+    0.08
+   ]
+  },
+  "face": {
+   "type": "face",
+   "head": "head",
+   "eyes": {
+    "at": [
+     0.15,
+     -0.08,
+     0.08
+    ],
+    "r": 0.046,
+    "upper": 0.45,
+    "lower": 0.2,
+    "dir": [
+     1,
+     -0.25,
+     0.1
+    ],
+    "part": "eyes",
+    "tilt": -6
+   }
+  }
+ },
+ "parts": {
+  "body": {
+   "color": [
+    0.55,
+    0.32,
+    0.2
+   ]
+  },
+  "jaw": {
+   "color": [
+    0.55,
+    0.34,
+    0.22
+   ]
+  },
+  "teeth": {
+   "color": [
+    0.86,
+    0.8,
+    0.66
+   ]
+  },
+  "lteeth": {
+   "color": [
+    0.86,
+    0.8,
+    0.66
+   ]
+  },
+  "claws": {
+   "color": [
+    0.12,
+    0.1,
+    0.09
+   ]
+  },
+  "eyes": {
+   "color": [
+    0.85,
+    0.62,
+    0.15
+   ]
+  }
+ }
+}

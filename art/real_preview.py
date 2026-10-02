@@ -22,7 +22,8 @@ from pipeline.blender_path import find_blender
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(ROOT, "output", "real-preview")
 KEYS = ["tyranno", "triceratops"]
-MODES = [("D", ["--skin", "limbs"], "ドット絵"), ("R", ["--skin", "fuse", "--real"], "リアル寄り（試作）")]
+MODES = [("D", ["--skin", "limbs"], "ドット絵"), ("R", ["--skin", "fuse", "--real"], "リアル寄り（試作）"),
+         ("S", ["--real", "--sculpt"], "彫刻モデル（hifipushie）")]
 RS = 3          # リアル寄りの絵は、1コマ 128×96 の3倍（384×288）で書き出す
 
 
@@ -61,7 +62,7 @@ def main():
             print("レンダリング:", name, flush=True)
             render(k, args)
     os.makedirs(OUT, exist_ok=True)
-    data = {"options": {k: n for k, _, n in MODES}, "dinos": {}, "hd": {"R": RS}}
+    data = {"options": {k: n for k, _, n in MODES}, "dinos": {}, "hd": {"R": RS, "S": RS}}
     for key in KEYS:
         info = None
         for k, _, _ in MODES:
